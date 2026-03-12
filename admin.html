@@ -53,6 +53,11 @@
         .cumple-anim { font-size: 1.2rem; display: inline-block; animation: bounce 1s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
         .logo-admin { width: 70px; margin-bottom: 10px; filter: drop-shadow(0 0 5px #00f2ff); }
+
+        /* Estilo para inputs de precios en configuración */
+        .price-config-grid { display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap; }
+        .price-item { display: flex; flex-direction: column; gap: 5px; }
+        .price-item input { width: 100px; padding: 5px; border-radius: 5px; border: 1px solid var(--neon-blue); background: rgba(0,0,0,0.3); color: white; text-align: center; }
     </style>
 </head>
 <body>
@@ -106,6 +111,26 @@
                     <small id="detallesMes"></small>
                 </div>
             </div>
+
+            <div style="margin-top: 30px; border-top: 1px solid var(--glass); padding-top: 20px;">
+                <h4>⚙️ Configuración de Costos de Membresía</h4>
+                <div class="price-config-grid">
+                    <div class="price-item">
+                        <label>Semana ($):</label>
+                        <input type="number" id="confPrecioSem" value="500">
+                    </div>
+                    <div class="price-item">
+                        <label>Quincena ($):</label>
+                        <input type="number" id="confPrecioQuin" value="800">
+                    </div>
+                    <div class="price-item">
+                        <label>Mes ($):</label>
+                        <input type="number" id="confPrecioMes" value="1200">
+                    </div>
+                </div>
+                <p style="font-size: 0.7rem; color: #888; margin-top: 10px;">* Los cambios se aplican a los nuevos registros y renovaciones.</p>
+            </div>
+
             <button class="btn-confirmar" style="margin-top:20px; width: 100%;" onclick="exportarExcel()">📥 DESCARGAR REPORTE HISTÓRICO (.CSV)</button>
         </section>
 
@@ -150,9 +175,9 @@
             <label style="color: var(--neon-orange); font-size: 0.8rem;">Vencimiento (Solo clientes antiguos):</label>
             <input type="date" id="venceManual">
             <select id="planMembrecia">
-                <option value="7">Semana ($500)</option>
-                <option value="15">Quincena ($800)</option>
-                <option value="30">Mes ($1200)</option>
+                <option value="7">Semanal</option>
+                <option value="15">Quincenal</option>
+                <option value="30">Mensual</option>
                 <option value="0">Migración (Sin costo)</option>
             </select>
             <select id="metodoInscripcion">
@@ -171,7 +196,7 @@
             <p id="renovarNombre" style="color:#00d4ff; font-weight:bold;"></p>
             <input type="hidden" id="renovarId"><input type="hidden" id="renovarTel">
             <select id="planRenovacion">
-                <option value="7">Semana ($500)</option><option value="15">Quincena ($800)</option><option value="30">Mes ($1200)</option>
+                <option value="7">Semanal</option><option value="15">Quincenal</option><option value="30">Mensual</option>
             </select>
             <select id="metodoRenovacion">
                 <option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option>
@@ -194,7 +219,6 @@
     </div>
 
     <script type="module">
-        // Se mantiene toda tu lógica de Firebase exactamente igual a como la enviaste
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, addDoc, getDocs, updateDoc, deleteDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -210,6 +234,16 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // --- FUNCIÓN PARA OBTENER PRECIOS ACTUALES DEL PANEL ---
+        const getPreciosConfig = () => {
+            return {
+                "0": 0,
+                "7": parseFloat(document.getElementById('confPrecioSem').value) || 0,
+                "15": parseFloat(document.getElementById('confPrecioQuin').value) || 0,
+                "30": parseFloat(document.getElementById('confPrecioMes').value) || 0
+            };
+        };
+
         window.showSection = (id) => {
             document.querySelectorAll('section').forEach(s => s.style.display = 'none');
             document.getElementById(id).style.display = 'block';
@@ -219,7 +253,6 @@
 
         const enviarTicketWS = (tel, msg) => window.open(`https://api.whatsapp.com/send?phone=52${tel}&text=${encodeURIComponent(msg)}`, '_blank');
 
-        // --- RENDERIZADO CON CLASES DE COLORCITO ---
         onSnapshot(collection(db, "clientes"), (snap) => {
             const tbody = document.getElementById('listaAtletasBody');
             tbody.innerHTML = "";
@@ -249,7 +282,6 @@
                     }
                 }
                 
-                // Aquí aplicamos las clases .atleta-row, .col-nombre y .col-visitas
                 tbody.innerHTML += `<tr class="atleta-row">
                     <td>${d.id}</td>
                     <td class="col-nombre">${cumpleIco}${d.nombre}</td>
@@ -265,7 +297,6 @@
             });
         });
 
-        // El resto de tus funciones de lógica permanecen IGUAL...
         window.registrarAtleta = async () => {
             const nom = document.getElementById('nomAtleta').value;
             const tel = document.getElementById('telAtleta').value;
@@ -273,8 +304,11 @@
             const dias = document.getElementById('planMembrecia').value;
             const met = document.getElementById('metodoInscripcion').value;
             const venceManual = document.getElementById('venceManual').value;
-            const precios = {"0":0, "7":500, "15":800, "30":1200};
+            
+            // USAR PRECIOS DINÁMICOS
+            const precios = getPreciosConfig();
             const planes = {"0":"Migración", "7":"Semanal", "15":"Quincenal", "30":"Mensual"};
+            
             const id = "EB-" + Math.floor(1000 + Math.random() * 9000);
             let vence = new Date();
             if (venceManual) {
@@ -283,45 +317,17 @@
             } else {
                 vence.setDate(vence.getDate() + parseInt(dias));
             }
+
             await setDoc(doc(db, "clientes", id), { id, nombre: nom.toUpperCase(), telefono: tel, cumple, fechaVencimiento: vence, asistencias: 0 });
+            
             if (precios[dias] > 0) {
                 await addDoc(collection(db, "finanzas"), { concepto: `Inscripción: ${nom}`, monto: precios[dias], metodo: met, fecha: new Date() });
             }
+
             const ticket = `*EK' BALAM CROSS TRAINING* 🐆\n------------------------------\n*TICKET DE INSCRIPCIÓN*\n------------------------------\n*ID:* ${id}\n*Atleta:* ${nom.toUpperCase()}\n*Plan:* ${planes[dias]}\n*Vence:* ${vence.toLocaleDateString()}\n*Pago:* $${precios[dias]}\n------------------------------\n¡Bienvenido a la manada! 🔥`;
             enviarTicketWS(tel, ticket);
             closeModal('modal-inscripcion');
             document.getElementById('venceManual').value = "";
-        };
-
-        window.abrirEditorAtleta = (id, nombre, tel, visitas) => {
-            document.getElementById('editAtletaId').value = id;
-            document.getElementById('editAtletaNom').value = nombre;
-            document.getElementById('editAtletaTel').value = tel;
-            document.getElementById('editAtletaVisitas').value = visitas;
-            openModal('modal-editar-atleta');
-        };
-
-        window.guardarCambiosAtleta = async () => {
-            const id = document.getElementById('editAtletaId').value;
-            await updateDoc(doc(db, "clientes", id), {
-                nombre: document.getElementById('editAtletaNom').value.toUpperCase(),
-                telefono: document.getElementById('editAtletaTel').value,
-                asistencias: parseInt(document.getElementById('editAtletaVisitas').value)
-            });
-            closeModal('modal-editar-atleta');
-        };
-
-        window.enviarRecordatorio = (nombre, tel, dias) => {
-            let msg = `Hola ${nombre}, te quedan ${dias} días de membresía. ¡Te esperamos! 🐆`;
-            if (dias <= 0) msg = `Hola ${nombre}, tu membresía ha vencido. Te esperamos para renovar. 🐆`;
-            enviarTicketWS(tel, msg);
-        };
-
-        window.abrirRenovacion = (id, nombre, tel) => {
-            document.getElementById('renovarId').value = id;
-            document.getElementById('renovarNombre').innerText = nombre;
-            document.getElementById('renovarTel').value = tel;
-            openModal('modal-renovar');
         };
 
         window.procesarRenovacion = async () => {
@@ -330,16 +336,21 @@
             const tel = document.getElementById('renovarTel').value;
             const dias = document.getElementById('planRenovacion').value;
             const met = document.getElementById('metodoRenovacion').value;
-            const precios = {"7":500, "15":800, "30":1200};
+            
+            // USAR PRECIOS DINÁMICOS
+            const precios = getPreciosConfig();
             const planes = {"7":"Semanal", "15":"Quincenal", "30":"Mensual"};
+            
             let vence = new Date(); vence.setDate(vence.getDate() + parseInt(dias));
             await updateDoc(doc(db, "clientes", id), { fechaVencimiento: vence });
             await addDoc(collection(db, "finanzas"), { concepto: `Renovación: ${nom}`, monto: precios[dias], metodo: met, fecha: new Date() });
+            
             const ticket = `*EK' BALAM CROSS TRAINING* 🐆\n------------------------------\n*TICKET DE RENOVACIÓN*\n------------------------------\n*Atleta:* ${nom}\n*Plan:* ${planes[dias]}\n*Vence:* ${vence.toLocaleDateString()}\n*Pago:* $${precios[dias]}\n------------------------------\n¡Gracias por seguir en la manada! 🔥`;
             enviarTicketWS(tel, ticket);
             closeModal('modal-renovar');
         };
 
+        // --- EL RESTO DE FUNCIONES (INVENTARIO, FINANZAS, ETC) QUEDAN IGUAL ---
         onSnapshot(collection(db, "inventario"), (snap) => {
             const grid = document.getElementById('gridVentas');
             const table = document.getElementById('inventarioBody');
@@ -429,6 +440,37 @@
             link.href = URL.createObjectURL(blob);
             link.download = `Reporte_EkBalam_Historico.csv`;
             link.click();
+        };
+
+        window.abrirEditorAtleta = (id, nombre, tel, visitas) => {
+            document.getElementById('editAtletaId').value = id;
+            document.getElementById('editAtletaNom').value = nombre;
+            document.getElementById('editAtletaTel').value = tel;
+            document.getElementById('editAtletaVisitas').value = visitas;
+            openModal('modal-editar-atleta');
+        };
+
+        window.guardarCambiosAtleta = async () => {
+            const id = document.getElementById('editAtletaId').value;
+            await updateDoc(doc(db, "clientes", id), {
+                nombre: document.getElementById('editAtletaNom').value.toUpperCase(),
+                telefono: document.getElementById('editAtletaTel').value,
+                asistencias: parseInt(document.getElementById('editAtletaVisitas').value)
+            });
+            closeModal('modal-editar-atleta');
+        };
+
+        window.enviarRecordatorio = (nombre, tel, dias) => {
+            let msg = `Hola ${nombre}, te quedan ${dias} días de membresía. ¡Te esperamos! 🐆`;
+            if (dias <= 0) msg = `Hola ${nombre}, tu membresía ha vencido. Te esperamos para renovar. 🐆`;
+            enviarTicketWS(tel, msg);
+        };
+
+        window.abrirRenovacion = (id, nombre, tel) => {
+            document.getElementById('renovarId').value = id;
+            document.getElementById('renovarNombre').innerText = nombre;
+            document.getElementById('renovarTel').value = tel;
+            openModal('modal-renovar');
         };
 
         window.eliminarAtleta = async (id) => { if(confirm("¿Eliminar permanentemente?")) await deleteDoc(doc(db, "clientes", id)); };
