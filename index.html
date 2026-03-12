@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check-in Ek' Balam</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Fondo Animado Dinámico */
+        body { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            background: linear-gradient(-45deg, #0a0b10, #1a1c25, #0a0b10, #051923);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            margin: 0; 
+            font-family: 'Rajdhani', sans-serif; 
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Tarjeta Neón con Glassmorphism */
+        .checkin-card { 
+            max-width: 450px; 
+            width: 90%; 
+            text-align: center; 
+            border: 2px solid rgba(0, 242, 255, 0.5); 
+            padding: 40px; 
+            position: relative; 
+            overflow: hidden;
+            box-shadow: 0 0 25px rgba(0, 242, 255, 0.2);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+        }
+        
+        .logo-checkin { width: 150px; margin-bottom: 10px; filter: drop-shadow(0 0 10px #00f2ff); }
+        
+        /* Input con Brillo Neón */
+        #idInput { 
+            text-align: center; 
+            font-size: 2.2rem; 
+            width: 90%; 
+            border: none; 
+            border-bottom: 3px solid rgba(0, 242, 255, 0.5); 
+            background: transparent; 
+            color: white; 
+            outline: none; 
+            margin-top: 20px; 
+            font-weight: bold; 
+            transition: all 0.3s ease;
+        }
+
+        #idInput:focus {
+            border-bottom-color: #00f2ff;
+            text-shadow: 0 0 10px #00f2ff;
+        }
+
+        /* Botón con Pulso de Energía */
+        .btn-checkin { 
+            width: 100%; 
+            font-size: 1.5rem; 
+            padding: 15px; 
+            margin-top: 30px; 
+            background: transparent; 
+            color: #00f2ff; 
+            border: 2px solid #00f2ff; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            border-radius: 10px;
+            animation: pulseNeon 2s infinite;
+        }
+
+        @keyframes pulseNeon {
+            0% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 242, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0); }
+        }
+
+        .btn-checkin:hover { 
+            background: #00f2ff; 
+            color: black; 
+            transform: scale(1.02);
+            box-shadow: 0 0 30px #00f2ff;
+            animation: none;
+        }
+
+        /* Efecto Glitch al aparecer info */
+        #info { 
+            display: none; 
+            margin-top: 30px; 
+            padding-top: 20px; 
+            border-top: 1px solid rgba(255,255,255,0.1); 
+        }
+
+        .glitch-in { animation: glitch 0.4s ease-out; }
+
+        @keyframes glitch {
+            0% { opacity: 0; transform: scale(0.9); }
+            20% { opacity: 1; transform: scale(1.05) skewX(10deg); }
+            40% { transform: skewX(-10deg); }
+            100% { transform: scale(1); }
+        }
+
+        /* Animaciones Especiales */
+        .cumple-rainbow { 
+            background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #00f2ff, #0000ff, #9400d3);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: rainbowLoop 3s linear infinite;
+            background-size: 200% auto;
+            font-size: 2.5rem !important; 
+        }
+
+        @keyframes rainbowLoop { to { background-position: 200% center; } }
+
+        .icon-bounce { display: inline-block; animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="glass-card checkin-card">
+        <img src="logo.jpg" alt="Ek' Balam Logo" class="logo-checkin">
+        <h1 class="neon-text" style="font-size: 3.5rem; margin: 0; color: #fff; text-shadow: 0 0 10px #00f2ff;">EK' BALAM</h1>
+        <p style="color: #00f2ff; letter-spacing: 4px; font-weight: bold; margin-bottom: 30px;">ACCESO ATLETAS</p>
+        
+        <input type="text" id="idInput" placeholder="EB-000" autocomplete="off">
+        
+        <button class="btn-checkin" onclick="checkIn()">CONFIRMAR ASISTENCIA</button>
+        
+        <div id="info">
+            <h2 id="atletaNom" style="color:#fff; text-transform: uppercase; font-size: 2rem; margin: 0;"></h2>
+            <p id="diasMsg" style="font-size: 1.6rem; font-weight: bold; margin: 15px 0;"></p>
+            <p id="motivo" style="font-size: 1.3rem; font-weight: 700; font-style: italic;"></p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyArDuJ0_9r1ZY3OB-CGJMZMO3aAwSkM4vU",
+            authDomain: "ekbalamsystem.firebaseapp.com",
+            projectId: "ekbalamsystem",
+            storageBucket: "ekbalamsystem.firebasestorage.app",
+            messagingSenderId: "426577244386",
+            appId: "1:426577244386:web:3b0c038675f6724fd7eebb"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const frases = [
+            "¡EL LÍMITE ES TU MENTE! 🔥",
+            "¡NI UN PASO ATRÁS! 👊",
+            "¡TU ÚNICA COMPETENCIA ERES TÚ! 📈",
+            "¡SUDOR HOY, GLORIA MAÑANA! 🏆",
+            "¡PROHIBIDO RENDIRSE! ⚡",
+            "¡CONVIERTE EL DOLOR EN PODER! ✨"
+        ];
+
+        // Función para generar sonido de escaneo
+        const playScanSound = (success = true) => {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = context.createOscillator();
+            const gain = context.createGain();
+            osc.connect(gain);
+            gain.connect(context.destination);
+
+            if (success) {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, context.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1760, context.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, context.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.2);
+            } else {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(110, context.currentTime);
+                gain.gain.setValueAtTime(0.1, context.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+            }
+            osc.start();
+            osc.stop(context.currentTime + 0.5);
+        };
+
+        window.checkIn = async () => {
+            const idInput = document.getElementById('idInput');
+            const id = idInput.value.trim().toUpperCase();
+            if(!id) return;
+
+            try {
+                const ref = doc(db, "clientes", id);
+                const snap = await getDoc(ref);
+
+                if (snap.exists()) {
+                    const data = snap.data();
+                    const hoy = new Date();
+                    const v = data.fechaVencimiento.toDate();
+                    const diff = Math.ceil((v - hoy) / (1000*60*60*24));
+
+                    const nomElement = document.getElementById('atletaNom');
+                    const msgElement = document.getElementById('diasMsg');
+                    const motivo = document.getElementById('motivo');
+                    const infoDiv = document.getElementById('info');
+                    
+                    nomElement.innerText = `HOLA, ${data.nombre}`;
+                    infoDiv.style.display = 'block';
+                    infoDiv.classList.add('glitch-in');
+
+                    let esCumple = false;
+                    if (data.cumple) {
+                        const [year, month, day] = data.cumple.split('-');
+                        if (parseInt(day) === hoy.getDate() && (parseInt(month)-1) === hoy.getMonth()) {
+                            esCumple = true;
+                        }
+                    }
+
+                    if(diff > 0) {
+                        playScanSound(true); // SONIDO ÉXITO
+                        msgElement.innerText = `Membresía: ${diff} días restantes`;
+                        msgElement.style.color = "#00f2ff";
+                        
+                        if (esCumple) {
+                            motivo.innerText = "¡FELIZ CUMPLEAÑOS! 🎂🎁🔥";
+                            motivo.className = "cumple-rainbow";
+                            confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
+                        } else {
+                            const fraseRandom = frases[Math.floor(Math.random() * frases.length)];
+                            motivo.innerHTML = fraseRandom.replace("🔥", "<span class='icon-bounce'>🔥</span>");
+                            motivo.style.color = "#00ff26";
+                            motivo.className = ""; 
+                        }
+                        
+                        await updateDoc(ref, { asistencias: increment(1) });
+
+                    } else {
+                        playScanSound(false); // SONIDO ERROR
+                        msgElement.innerText = "MEMBRESÍA VENCIDA ❌";
+                        msgElement.style.color = "#ff3131";
+                        motivo.innerText = "POR FAVOR, PASA A PAGAR CON EL COACH";
+                        motivo.style.color = "white";
+                        motivo.className = "";
+                    }
+
+                    setTimeout(() => { 
+                        infoDiv.style.display = 'none'; 
+                        infoDiv.classList.remove('glitch-in');
+                        idInput.value = ""; 
+                    }, 5000);
+
+                } else {
+                    playScanSound(false);
+                    alert("ID no encontrado. Verifica con tu Coach.");
+                }
+            } catch (error) { 
+                console.error(error);
+                alert("Error de conexión");
+            }
+        };
+
+        idInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") checkIn();
+        });
+    </script>
+</body>
+</html>

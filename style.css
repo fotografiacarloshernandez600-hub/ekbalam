@@ -1,0 +1,198 @@
+/* =========================================
+   ESTILOS EK' BALAM ADMIN PRO - NEÓN ACTIVO
+   ========================================= */
+
+:root {
+    --bg: #0a0b10;
+    --sidebar-bg: #050508;
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --neon-blue: #00d4ff;
+    --neon-green: #39ff14;
+    --neon-purple: #bc13fe;
+    --neon-orange: #ff8c00;
+    --neon-gold: #ffd700;
+    --neon-red: #ff3131;
+    --text: #ffffff;
+    --glass: rgba(255, 255, 255, 0.1);
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* SIDEBAR - ESTRUCTURA */
+.sidebar {
+    width: 300px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--neon-blue);
+    padding: 40px 25px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 5px 0 15px rgba(0, 212, 255, 0.2);
+    z-index: 10;
+}
+
+.logo-area h1 {
+    font-size: 2.2rem;
+    color: var(--text);
+    margin: 0;
+    text-transform: uppercase;
+    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue), 0 0 80px var(--neon-blue);
+    animation: neonFlicker 3s infinite;
+}
+
+.status-badge {
+    font-size: 0.85rem;
+    color: var(--neon-green);
+    border: 1px solid var(--neon-green);
+    padding: 4px 12px;
+    border-radius: 10px;
+    margin-top: 10px;
+    display: inline-block;
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+}
+
+/* BOTONES MENÚ */
+.nav-btn {
+    background: rgba(255, 255, 255, 0.02);
+    color: #eee;
+    border: 1px solid var(--glass);
+    padding: 22px;
+    text-align: left;
+    margin: 12px 0;
+    cursor: pointer;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1.3rem;
+    transition: all 0.4s ease;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.nav-btn:nth-of-type(1):hover { border-color: var(--neon-blue); box-shadow: 0 0 20px rgba(0, 212, 255, 0.4); color: var(--neon-blue); }
+.nav-btn:nth-of-type(2):hover { border-color: var(--neon-purple); box-shadow: 0 0 20px rgba(188, 19, 254, 0.4); color: var(--neon-purple); }
+.nav-btn:nth-of-type(3):hover { border-color: var(--neon-orange); box-shadow: 0 0 20px rgba(255, 140, 0, 0.4); color: var(--neon-orange); }
+.nav-btn:nth-of-type(4):hover { border-color: var(--neon-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); color: var(--neon-gold); }
+.nav-btn:nth-of-type(5):hover { border-color: var(--neon-green); box-shadow: 0 0 20px rgba(57, 255, 20, 0.4); color: var(--neon-green); }
+
+.nav-btn::first-letter { font-size: 2rem; filter: drop-shadow(0 0 5px currentColor); }
+
+/* TABLAS */
+.main-content {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+    background: radial-gradient(circle at top right, #1a1b26, #0a0b10);
+}
+
+table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+td { padding: 20px 15px; font-size: 1.4rem; background: rgba(255,255,255,0.01); border-top: 1px solid rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.03); transition: 0.3s; }
+tr:hover td { background: rgba(0, 212, 255, 0.05); border-color: rgba(0, 212, 255, 0.2); }
+td:nth-child(4) { font-weight: bold; color: var(--neon-blue); font-size: 1.8rem; text-shadow: 0 0 10px rgba(0, 212, 255, 0.3); }
+
+/* =========================================
+   MODALES (CENTRADO Y COMPACTO)
+   ========================================= */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 99999;
+    backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #101118;
+    border: 1px solid var(--neon-blue);
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+    border-radius: 20px;
+    padding: 25px; /* Reducido */
+    width: 380px;  /* Reducido */
+    max-width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    animation: modalSlide 0.3s ease-out;
+}
+
+/* Títulos compactos */
+.modal-content h3 {
+    margin: 0 0 15px 0;
+    color: var(--neon-blue);
+    text-align: center;
+    font-size: 1.6rem;
+}
+
+/* Inputs compactos */
+.modal-content input, 
+.modal-content select {
+    background: #000;
+    border: 1px solid var(--glass);
+    color: white;
+    padding: 12px; /* Reducido */
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.modal-content input:focus {
+    border-color: var(--neon-blue);
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+}
+
+/* Botones compactos */
+.btn-confirmar {
+    background: var(--neon-green);
+    color: black;
+    padding: 15px !important; /* Reducido */
+    font-weight: bold;
+    font-size: 1.2rem !important;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 10px;
+    border: none;
+    transition: 0.3s;
+    text-transform: uppercase;
+}
+
+.btn-confirmar:hover { box-shadow: 0 0 30px var(--neon-green); transform: scale(1.02); }
+
+.btn-cancelar {
+    background: transparent;
+    color: var(--neon-red);
+    border: 1px solid var(--neon-red);
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn-cancelar:hover { background: var(--neon-red); color: white; }
+
+/* ANIMACIONES */
+@keyframes modalSlide {
+    from { transform: translateY(-30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes neonFlicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue), 0 0 80px var(--neon-blue); }
+    20%, 24%, 55% { text-shadow: none; color: rgba(255, 255, 255, 0.5); }
+}

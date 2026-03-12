@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ek' Balam Admin - Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 15px; }
+        .product-card { background: var(--card-bg); border: 1px solid var(--glass); border-radius: 15px; padding: 10px; text-align: center; }
+        
+        /* --- ESTILOS DE TABLA CON COLORCITO (SOLO PARA ATLETAS) --- */
+        #atleta-section table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+        #atleta-section th { color: #00d4ff; text-transform: uppercase; padding: 10px; font-size: 0.8rem; }
+        
+        /* Filas tipo tarjeta */
+        .atleta-row { background: rgba(255, 255, 255, 0.05); transition: 0.3s; }
+        .atleta-row:hover { background: rgba(0, 212, 255, 0.1); transform: scale(1.01); }
+
+        .atleta-row td { padding: 15px 10px; text-align: center; color: #fff; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        
+        /* Borde Neon a la izquierda del ID */
+        .atleta-row td:first-child { border-left: 3px solid #00d4ff; border-radius: 10px 0 0 10px; font-weight: bold; color: #00d4ff; }
+        .atleta-row td:last-child { border-radius: 0 10px 10px 0; }
+
+        /* Colores específicos para datos */
+        .col-nombre { font-weight: bold; text-align: left !important; }
+        .col-visitas { color: #ff00ff !important; font-weight: bold; font-size: 1.1rem; text-shadow: 0 0 5px rgba(255,0,255,0.3); }
+
+        /* ESTADOS DE VENCIMIENTO */
+        .vence-pronto { color: #f39c12 !important; font-weight: bold; }
+        .vencido-critico { 
+            background: rgba(255, 49, 49, 0.2) !important; 
+            color: #ff3131 !important; 
+            font-weight: bold; 
+            animation: danger-pulse 1s infinite; 
+            border-radius: 5px;
+        }
+
+        @keyframes danger-pulse {
+            0% { box-shadow: inset 0 0 0px #ff3131; }
+            50% { box-shadow: inset 0 0 10px #ff3131; opacity: 0.8; }
+            100% { box-shadow: inset 0 0 0px #ff3131; }
+        }
+
+        .btn-ws { background: #25d366; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .btn-renew { background: #f39c12; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: bold; margin-right: 5px; }
+        .btn-delete { background: #ff3131; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .btn-edit { background: #00d4ff; color: black; border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer; margin-right: 5px; font-weight: bold;}
+        
+        .low-stock { color: #ff3131; font-weight: bold; }
+        .cumple-anim { font-size: 1.2rem; display: inline-block; animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+        .logo-admin { width: 70px; margin-bottom: 10px; filter: drop-shadow(0 0 5px #00f2ff); }
+    </style>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo-area">
+            <img src="logo.jpg" alt="Ek Balam" class="logo-admin">
+            <h1 class="neon-text">EK' BALAM CROSS TRAINING</h1>
+            <span>Admin Panel</span>
+        </div>
+        <button class="nav-btn" onclick="showSection('atleta-section')">👥 Atletas</button>
+        <button class="nav-btn" onclick="openModal('modal-inscripcion')">➕ Inscripción</button>
+        <button class="nav-btn" onclick="showSection('ventas-section')">🛒 Punto de Venta</button>
+        <button class="nav-btn" onclick="showSection('inventario-section')">📦 Inventario</button>
+        <button class="nav-btn" onclick="showSection('corte-section')">💰 Caja</button>
+        <div class="sidebar-footer"><p>Admin: 9331524487</p></div>
+    </nav>
+
+    <main class="main-content">
+        <section id="atleta-section" class="glass-card">
+            <h3>Atletas Activos</h3>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Nombre</th><th>Vence</th><th>Visitas</th><th>Gestión</th></tr>
+                </thead>
+                <tbody id="listaAtletasBody"></tbody>
+            </table>
+        </section>
+
+        <section id="inventario-section" class="glass-card" style="display:none;">
+            <div style="display:flex; justify-content: space-between; align-items: center;">
+                <h3>📦 Inventario de Productos</h3>
+                <button class="btn-confirmar" onclick="openModal('modal-producto')">+ Nuevo Producto</button>
+            </div>
+            <table>
+                <thead><tr><th>Icono</th><th>Nombre</th><th>Stock</th><th>Precio</th><th>Acción</th></tr></thead>
+                <tbody id="inventarioBody"></tbody>
+            </table>
+        </section>
+
+        <section id="corte-section" class="glass-card" style="display:none;">
+            <h3>💰 Control de Caja Automático</h3>
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h4>Ingresos de Hoy</h4>
+                    <p id="corteDia" style="color:var(--neon-green); font-size:1.8rem;">$0.00</p>
+                    <small id="detallesHoy"></small>
+                </div>
+                <div class="stat-card">
+                    <h4>Corte del Mes</h4>
+                    <p id="corteMes" style="color:var(--neon-blue); font-size:1.8rem;">$0.00</p>
+                    <small id="detallesMes"></small>
+                </div>
+            </div>
+            <button class="btn-confirmar" style="margin-top:20px; width: 100%;" onclick="exportarExcel()">📥 DESCARGAR REPORTE HISTÓRICO (.CSV)</button>
+        </section>
+
+        <section id="ventas-section" class="glass-card" style="display:none;">
+            <h3>🛒 Tienda / Venta Rápida</h3>
+            <div class="product-grid" id="gridVentas"></div>
+        </section>
+    </main>
+
+    <div id="modal-editar-atleta" class="modal">
+        <div class="modal-content">
+            <h3>Editar Atleta</h3>
+            <input type="hidden" id="editAtletaId">
+            <input type="text" id="editAtletaNom" placeholder="Nombre">
+            <input type="tel" id="editAtletaTel" placeholder="WhatsApp">
+            <input type="number" id="editAtletaVisitas" placeholder="Visitas Totales 🔥">
+            <button class="btn-confirmar" onclick="guardarCambiosAtleta()">GUARDAR CAMBIOS</button>
+            <button class="btn-cancelar" onclick="closeModal('modal-editar-atleta')">CANCELAR</button>
+        </div>
+    </div>
+
+    <div id="modal-editar-prod" class="modal">
+        <div class="modal-content">
+            <h3>Editar Producto</h3>
+            <input type="hidden" id="editId">
+            <input type="text" id="editNombre" placeholder="Nombre">
+            <input type="number" id="editPrecio" placeholder="Precio">
+            <input type="number" id="editStock" placeholder="Stock Total">
+            <button class="btn-confirmar" onclick="guardarCambiosProducto()">ACTUALIZAR</button>
+            <button class="btn-cancelar" onclick="closeModal('modal-editar-prod')">CANCELAR</button>
+        </div>
+    </div>
+
+    <div id="modal-inscripcion" class="modal">
+        <div class="modal-content">
+            <h3>Nueva Inscripción</h3>
+            <input type="text" id="nomAtleta" placeholder="Nombre completo">
+            <input type="tel" id="telAtleta" placeholder="WhatsApp">
+            <label>Cumpleaños:</label>
+            <input type="date" id="cumpleAtleta">
+            <hr style="border: 0.5px solid var(--glass); width: 100%;">
+            <label style="color: var(--neon-orange); font-size: 0.8rem;">Vencimiento (Solo clientes antiguos):</label>
+            <input type="date" id="venceManual">
+            <select id="planMembrecia">
+                <option value="7">Semana ($500)</option>
+                <option value="15">Quincena ($800)</option>
+                <option value="30">Mes ($1200)</option>
+                <option value="0">Migración (Sin costo)</option>
+            </select>
+            <select id="metodoInscripcion">
+                <option value="Efectivo">Efectivo</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="Ninguno">Ya pagado</option>
+            </select>
+            <button class="btn-confirmar" onclick="registrarAtleta()">REGISTRAR Y TICKET</button>
+            <button class="btn-cancelar" onclick="closeModal('modal-inscripcion')">CERRAR</button>
+        </div>
+    </div>
+
+    <div id="modal-renovar" class="modal">
+        <div class="modal-content">
+            <h3>Renovar Membresía</h3>
+            <p id="renovarNombre" style="color:#00d4ff; font-weight:bold;"></p>
+            <input type="hidden" id="renovarId"><input type="hidden" id="renovarTel">
+            <select id="planRenovacion">
+                <option value="7">Semana ($500)</option><option value="15">Quincena ($800)</option><option value="30">Mes ($1200)</option>
+            </select>
+            <select id="metodoRenovacion">
+                <option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option>
+            </select>
+            <button class="btn-confirmar" onclick="procesarRenovacion()">RENOVAR Y TICKET</button>
+            <button class="btn-cancelar" onclick="closeModal('modal-renovar')">CERRAR</button>
+        </div>
+    </div>
+
+    <div id="modal-producto" class="modal">
+        <div class="modal-content">
+            <h3>Nuevo Producto</h3>
+            <input type="text" id="invNombre" placeholder="Nombre">
+            <input type="number" id="invPrecio" placeholder="Precio">
+            <input type="number" id="invStock" placeholder="Stock Inicial">
+            <input type="text" id="invIcono" placeholder="🥤">
+            <button class="btn-confirmar" onclick="guardarProducto()">GUARDAR</button>
+            <button class="btn-cancelar" onclick="closeModal('modal-producto')">CERRAR</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Se mantiene toda tu lógica de Firebase exactamente igual a como la enviaste
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, addDoc, getDocs, updateDoc, deleteDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyArDuJ0_9r1ZY3OB-CGJMZMO3aAwSkM4vU",
+            authDomain: "ekbalamsystem.firebaseapp.com",
+            projectId: "ekbalamsystem",
+            storageBucket: "ekbalamsystem.firebasestorage.app",
+            messagingSenderId: "426577244386",
+            appId: "1:426577244386:web:3b0c038675f6724fd7eebb"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.showSection = (id) => {
+            document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+        };
+        window.openModal = (id) => document.getElementById(id).style.display = 'flex';
+        window.closeModal = (id) => document.getElementById(id).style.display = 'none';
+
+        const enviarTicketWS = (tel, msg) => window.open(`https://api.whatsapp.com/send?phone=52${tel}&text=${encodeURIComponent(msg)}`, '_blank');
+
+        // --- RENDERIZADO CON CLASES DE COLORCITO ---
+        onSnapshot(collection(db, "clientes"), (snap) => {
+            const tbody = document.getElementById('listaAtletasBody');
+            tbody.innerHTML = "";
+            const hoy = new Date();
+            
+            snap.forEach(docSnap => {
+                const d = docSnap.data();
+                const v = d.fechaVencimiento.toDate();
+                const diff = Math.ceil((v - hoy) / (1000*60*60*24));
+                const totalVisitas = d.asistencias || 0;
+
+                let estadoClase = "";
+                let textoVence = diff > 0 ? diff + "d" : "VENCIDO";
+                
+                if (diff <= 0) {
+                    estadoClase = "vencido-critico";
+                    if (diff <= -4) textoVence = `BORRAR (${Math.abs(diff)}d)`;
+                } else if (diff <= 3) {
+                    estadoClase = "vence-pronto";
+                }
+
+                let cumpleIco = "";
+                if(d.cumple) {
+                    const partes = d.cumple.split('-');
+                    if(parseInt(partes[2]) === hoy.getDate() && (parseInt(partes[1])-1) === hoy.getMonth()) {
+                        cumpleIco = "<span class='cumple-anim'>🎂</span> ";
+                    }
+                }
+                
+                // Aquí aplicamos las clases .atleta-row, .col-nombre y .col-visitas
+                tbody.innerHTML += `<tr class="atleta-row">
+                    <td>${d.id}</td>
+                    <td class="col-nombre">${cumpleIco}${d.nombre}</td>
+                    <td class="${estadoClase}">${textoVence}</td>
+                    <td class="col-visitas">${totalVisitas} 🔥</td>
+                    <td>
+                        <button class="btn-edit" title="Editar datos" onclick="abrirEditorAtleta('${d.id}','${d.nombre}','${d.telefono}',${totalVisitas})">✎</button>
+                        <button class="btn-ws" title="Enviar recordatorio" onclick="enviarRecordatorio('${d.nombre}', '${d.telefono}', ${diff})">AVISAR</button>
+                        <button class="btn-renew" title="Renovar plan" onclick="abrirRenovacion('${d.id}','${d.nombre}','${d.telefono}')">RENOVAR</button>
+                        <button class="btn-delete" title="Eliminar atleta" onclick="eliminarAtleta('${d.id}')">BORRAR</button>
+                    </td>
+                </tr>`;
+            });
+        });
+
+        // El resto de tus funciones de lógica permanecen IGUAL...
+        window.registrarAtleta = async () => {
+            const nom = document.getElementById('nomAtleta').value;
+            const tel = document.getElementById('telAtleta').value;
+            const cumple = document.getElementById('cumpleAtleta').value;
+            const dias = document.getElementById('planMembrecia').value;
+            const met = document.getElementById('metodoInscripcion').value;
+            const venceManual = document.getElementById('venceManual').value;
+            const precios = {"0":0, "7":500, "15":800, "30":1200};
+            const planes = {"0":"Migración", "7":"Semanal", "15":"Quincenal", "30":"Mensual"};
+            const id = "EB-" + Math.floor(1000 + Math.random() * 9000);
+            let vence = new Date();
+            if (venceManual) {
+                vence = new Date(venceManual);
+                vence.setMinutes(vence.getMinutes() + vence.getTimezoneOffset());
+            } else {
+                vence.setDate(vence.getDate() + parseInt(dias));
+            }
+            await setDoc(doc(db, "clientes", id), { id, nombre: nom.toUpperCase(), telefono: tel, cumple, fechaVencimiento: vence, asistencias: 0 });
+            if (precios[dias] > 0) {
+                await addDoc(collection(db, "finanzas"), { concepto: `Inscripción: ${nom}`, monto: precios[dias], metodo: met, fecha: new Date() });
+            }
+            const ticket = `*EK' BALAM CROSS TRAINING* 🐆\n------------------------------\n*TICKET DE INSCRIPCIÓN*\n------------------------------\n*ID:* ${id}\n*Atleta:* ${nom.toUpperCase()}\n*Plan:* ${planes[dias]}\n*Vence:* ${vence.toLocaleDateString()}\n*Pago:* $${precios[dias]}\n------------------------------\n¡Bienvenido a la manada! 🔥`;
+            enviarTicketWS(tel, ticket);
+            closeModal('modal-inscripcion');
+            document.getElementById('venceManual').value = "";
+        };
+
+        window.abrirEditorAtleta = (id, nombre, tel, visitas) => {
+            document.getElementById('editAtletaId').value = id;
+            document.getElementById('editAtletaNom').value = nombre;
+            document.getElementById('editAtletaTel').value = tel;
+            document.getElementById('editAtletaVisitas').value = visitas;
+            openModal('modal-editar-atleta');
+        };
+
+        window.guardarCambiosAtleta = async () => {
+            const id = document.getElementById('editAtletaId').value;
+            await updateDoc(doc(db, "clientes", id), {
+                nombre: document.getElementById('editAtletaNom').value.toUpperCase(),
+                telefono: document.getElementById('editAtletaTel').value,
+                asistencias: parseInt(document.getElementById('editAtletaVisitas').value)
+            });
+            closeModal('modal-editar-atleta');
+        };
+
+        window.enviarRecordatorio = (nombre, tel, dias) => {
+            let msg = `Hola ${nombre}, te quedan ${dias} días de membresía. ¡Te esperamos! 🐆`;
+            if (dias <= 0) msg = `Hola ${nombre}, tu membresía ha vencido. Te esperamos para renovar. 🐆`;
+            enviarTicketWS(tel, msg);
+        };
+
+        window.abrirRenovacion = (id, nombre, tel) => {
+            document.getElementById('renovarId').value = id;
+            document.getElementById('renovarNombre').innerText = nombre;
+            document.getElementById('renovarTel').value = tel;
+            openModal('modal-renovar');
+        };
+
+        window.procesarRenovacion = async () => {
+            const id = document.getElementById('renovarId').value;
+            const nom = document.getElementById('renovarNombre').innerText;
+            const tel = document.getElementById('renovarTel').value;
+            const dias = document.getElementById('planRenovacion').value;
+            const met = document.getElementById('metodoRenovacion').value;
+            const precios = {"7":500, "15":800, "30":1200};
+            const planes = {"7":"Semanal", "15":"Quincenal", "30":"Mensual"};
+            let vence = new Date(); vence.setDate(vence.getDate() + parseInt(dias));
+            await updateDoc(doc(db, "clientes", id), { fechaVencimiento: vence });
+            await addDoc(collection(db, "finanzas"), { concepto: `Renovación: ${nom}`, monto: precios[dias], metodo: met, fecha: new Date() });
+            const ticket = `*EK' BALAM CROSS TRAINING* 🐆\n------------------------------\n*TICKET DE RENOVACIÓN*\n------------------------------\n*Atleta:* ${nom}\n*Plan:* ${planes[dias]}\n*Vence:* ${vence.toLocaleDateString()}\n*Pago:* $${precios[dias]}\n------------------------------\n¡Gracias por seguir en la manada! 🔥`;
+            enviarTicketWS(tel, ticket);
+            closeModal('modal-renovar');
+        };
+
+        onSnapshot(collection(db, "inventario"), (snap) => {
+            const grid = document.getElementById('gridVentas');
+            const table = document.getElementById('inventarioBody');
+            grid.innerHTML = ""; table.innerHTML = "";
+            snap.forEach(ds => {
+                const p = ds.data();
+                grid.innerHTML += `<div class="product-card">
+                    <div style="font-size:1.5rem">${p.icono}</div>
+                    <strong>${p.nombre}</strong><br>$${p.precio}<br>
+                    <button class="btn-confirmar" style="padding:5px; font-size:0.7rem;" onclick="venderProducto('${ds.id}','${p.nombre}',${p.precio},${p.stock})">VENDER</button>
+                </div>`;
+                table.innerHTML += `<tr>
+                    <td>${p.icono}</td><td>${p.nombre}</td>
+                    <td class="${p.stock < 3 ? 'low-stock' : ''}">${p.stock}</td>
+                    <td>$${p.precio}</td>
+                    <td>
+                        <button class="btn-edit" onclick="abrirEditor('${ds.id}','${p.nombre}',${p.precio},${p.stock})">✎</button>
+                        <button class="btn-delete" onclick="eliminarProducto('${ds.id}')">✖</button>
+                    </td>
+                </tr>`;
+            });
+        });
+
+        window.venderProducto = async (id, nombre, precio, stock) => {
+            if(stock <= 0) return alert("Sin stock");
+            const met = confirm("¿Pago en Efectivo? (Cancelar para Transferencia)") ? "Efectivo" : "Transferencia";
+            await updateDoc(doc(db, "inventario", id), { stock: increment(-1) });
+            await addDoc(collection(db, "finanzas"), { concepto: `Venta: ${nombre}`, monto: precio, metodo: met, fecha: new Date() });
+        };
+
+        window.abrirEditor = (id, nombre, precio, stock) => {
+            document.getElementById('editId').value = id;
+            document.getElementById('editNombre').value = nombre;
+            document.getElementById('editPrecio').value = precio;
+            document.getElementById('editStock').value = stock;
+            openModal('modal-editar-prod');
+        };
+
+        window.guardarCambiosProducto = async () => {
+            const id = document.getElementById('editId').value;
+            await updateDoc(doc(db, "inventario", id), {
+                nombre: document.getElementById('editNombre').value.toUpperCase(),
+                precio: parseFloat(document.getElementById('editPrecio').value),
+                stock: parseInt(document.getElementById('editStock').value)
+            });
+            closeModal('modal-editar-prod');
+        };
+
+        window.guardarProducto = async () => {
+            await addDoc(collection(db, "inventario"), { 
+                nombre: document.getElementById('invNombre').value.toUpperCase(), 
+                precio: parseFloat(document.getElementById('invPrecio').value), 
+                stock: parseInt(document.getElementById('invStock').value), 
+                icono: document.getElementById('invIcono').value || "📦" 
+            });
+            closeModal('modal-producto');
+        };
+
+        onSnapshot(collection(db, "finanzas"), (snap) => {
+            let hoyE = 0, hoyT = 0, mesE = 0, mesT = 0;
+            const ahora = new Date();
+            const dActualStr = ahora.toLocaleDateString();
+            snap.forEach(doc => {
+                const f = doc.data(); const fechaF = f.fecha.toDate();
+                if(fechaF.toLocaleDateString() === dActualStr) {
+                    if(f.metodo === "Efectivo") hoyE += f.monto; else hoyT += f.monto;
+                }
+                if(fechaF.getMonth() === ahora.getMonth() && fechaF.getFullYear() === ahora.getFullYear()) {
+                    if(f.metodo === "Efectivo") mesE += f.monto; else mesT += f.monto;
+                }
+            });
+            document.getElementById('corteDia').innerText = `$${(hoyE + hoyT).toLocaleString()}`;
+            document.getElementById('detallesHoy').innerText = `💵 Ef: $${hoyE} | 💳 Tr: $${hoyT}`;
+            document.getElementById('corteMes').innerText = `$${(mesE + mesT).toLocaleString()}`;
+            document.getElementById('detallesMes').innerText = `💵 Ef: $${mesE} | 💳 Tr: $${mesT}`;
+        });
+
+        window.exportarExcel = async () => {
+            const snap = await getDocs(collection(db, "finanzas"));
+            let csv = "Concepto,Monto,Metodo,Fecha\n";
+            snap.forEach(d => {
+                const f = d.data();
+                csv += `${f.concepto},${f.monto},${f.metodo},${f.fecha.toDate().toLocaleString()}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Reporte_EkBalam_Historico.csv`;
+            link.click();
+        };
+
+        window.eliminarAtleta = async (id) => { if(confirm("¿Eliminar permanentemente?")) await deleteDoc(doc(db, "clientes", id)); };
+        window.eliminarProducto = async (id) => { if(confirm("¿Eliminar producto?")) await deleteDoc(doc(db, "inventario", id)); };
+    </script>
+</body>
+</html>
