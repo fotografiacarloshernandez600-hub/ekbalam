@@ -32,11 +32,14 @@
         .price-item { display: flex; flex-direction: column; gap: 5px; font-size: 0.8rem; }
         .price-item input { width: 70px; padding: 5px; border-radius: 5px; border: 1px solid #00d4ff; background: rgba(0,0,0,0.3); color: white; text-align: center; }
 
-        /* Estilos para el Historial de Caja */
         .historial-caja { margin-top: 20px; max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; }
         .historial-caja table { width: 100%; font-size: 0.85rem; border-collapse: collapse; }
         .historial-caja th { text-align: left; border-bottom: 1px solid var(--glass); padding: 5px; color: #00d4ff; }
         .historial-caja td { padding: 8px 5px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        /* Estilo para el Checkbox de Coach */
+        .coach-check { display: flex; align-items: center; gap: 8px; margin: 10px 0; background: rgba(0, 212, 255, 0.1); padding: 8px; border-radius: 8px; border: 1px dashed #00d4ff; }
+        .coach-badge { background: #00d4ff; color: #000; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -115,6 +118,10 @@
     <div id="modal-inscripcion" class="modal">
         <div class="modal-content">
             <h3>Nueva Inscripción</h3>
+            <div class="coach-check">
+                <input type="checkbox" id="esCoach" style="width:20px; height:20px; cursor:pointer;">
+                <label for="esCoach" style="color:#00d4ff; font-weight:bold; cursor:pointer;">MARCAR COMO COACH (Staff)</label>
+            </div>
             <input type="text" id="fotoAtleta" placeholder="URL Foto Atleta">
             <input type="text" id="nomAtleta" placeholder="Nombre completo">
             <input type="tel" id="telAtleta" placeholder="WhatsApp">
@@ -165,6 +172,10 @@
         <div class="modal-content">
             <h3>Editar Datos de Atleta</h3>
             <input type="hidden" id="editId">
+            <div class="coach-check">
+                <input type="checkbox" id="editEsCoach" style="width:20px; height:20px; cursor:pointer;">
+                <label for="editEsCoach" style="color:#00d4ff; font-weight:bold; cursor:pointer;">PERFIL DE COACH</label>
+            </div>
             <label>Nombre:</label>
             <input type="text" id="editNombre">
             <label>WhatsApp:</label>
@@ -214,7 +225,7 @@
             "30": parseFloat(document.getElementById('confPrecioMes').value)
         });
 
-        const getPlanTexto = (d) => ({ "1":"Visita", "7":"Semanal", "15":"Quincenal", "21":"21 Días", "30":"Mensual", "0":"Migración" }[d]);
+        const getPlanTexto = (d) => ({ "1":"Visita", "7":"Semanal", "15":"Quincenal", "21":"21 Días", "30":"Mensual", "0":"Migración", "COACH":"Staff Coach" }[d]);
 
         // --- RENDERIZADO ATLETAS ---
         onSnapshot(collection(db, "clientes"), (snap) => {
@@ -229,30 +240,37 @@
                     const p = d.cumple.split('-');
                     if(parseInt(p[2]) === hoy.getDate() && (parseInt(p[1])-1) === hoy.getMonth()) cumpleIco = "<span class='cumple-anim'>🎂</span> ";
                 }
+                
+                // Lógica de Coach para la tabla
+                const badgeCoach = d.esCoach ? `<span class="coach-badge">COACH</span>` : '';
+                const btnRenovar = d.esCoach ? '' : `<button class="btn-renew" onclick="abrirRenovacion('${d.id}','${d.nombre}','${d.telefono}')">RENOVAR</button>`;
+                const venceTxt = d.esCoach ? '∞ STAFF' : (diff > 0 ? diff + "d" : "VENCIDO");
+
                 tbody.innerHTML += `
                     <tr class="atleta-row" data-id="${d.id}" data-plan="${d.planId}" data-vence="${v.toISOString()}">
                         <td><img src="${foto}" class="img-atleta"></td>
                         <td>${d.id}</td>
-                        <td class="col-nombre">${cumpleIco}${d.nombre}</td>
-                        <td class="${diff <= 0 ? 'vencido-critico' : ''}">${diff > 0 ? diff + "d" : "VENCIDO"}</td>
+                        <td class="col-nombre">${cumpleIco}${d.nombre}${badgeCoach}</td>
+                        <td class="${!d.esCoach && diff <= 0 ? 'vencido-critico' : ''}">${venceTxt}</td>
                         <td class="col-visitas">${d.asistencias || 0} 🔥</td>
                         <td>
                             <button class="btn-ws" onclick="avisarVencimiento('${d.nombre}','${d.telefono}',${diff})">AVISAR</button>
-                            <button class="btn-renew" onclick="abrirRenovacion('${d.id}','${d.nombre}','${d.telefono}')">RENOVAR</button>
-                            <button class="btn-edit" onclick="abrirEditorAtleta('${d.id}','${d.nombre}','${d.telefono}',${d.asistencias || 0},'${d.foto || ''}')">✎</button>
+                            ${btnRenovar}
+                            <button class="btn-edit" onclick="abrirEditorAtleta('${d.id}','${d.nombre}','${d.telefono}',${d.asistencias || 0},'${d.foto || ''}', ${d.esCoach || false})">✎</button>
                             <button class="btn-delete" onclick="eliminarAtleta('${d.id}')">✖</button>
                         </td>
                     </tr>`;
             });
         });
 
-        // --- FUNCIONES DE EDICIÓN (NUEVAS) ---
-        window.abrirEditorAtleta = (id, nombre, tel, asistencias, foto) => {
+        // --- FUNCIONES DE EDICIÓN ---
+        window.abrirEditorAtleta = (id, nombre, tel, asistencias, foto, esCoach) => {
             document.getElementById('editId').value = id;
             document.getElementById('editNombre').value = nombre;
             document.getElementById('editTel').value = tel;
             document.getElementById('editAsistencias').value = asistencias;
             document.getElementById('editFoto').value = foto;
+            document.getElementById('editEsCoach').checked = esCoach;
             openModal('modal-editar-atleta');
         };
 
@@ -262,7 +280,8 @@
                 nombre: document.getElementById('editNombre').value.toUpperCase(),
                 telefono: document.getElementById('editTel').value,
                 asistencias: parseInt(document.getElementById('editAsistencias').value),
-                foto: document.getElementById('editFoto').value
+                foto: document.getElementById('editFoto').value,
+                esCoach: document.getElementById('editEsCoach').checked
             };
             try {
                 await updateDoc(doc(db, "clientes", id), nuevoDato);
@@ -280,21 +299,38 @@
             const dias = document.getElementById('planMembrecia').value;
             const met = document.getElementById('metodoInscripcion').value;
             const manual = document.getElementById('venceManual').value;
+            const esCoach = document.getElementById('esCoach').checked;
             const precios = window.getPreciosConfig();
             const id = "EB-" + Math.floor(1000 + Math.random() * 9000);
+            
             let vence = new Date();
-            if(manual) { vence = new Date(manual); vence.setMinutes(vence.getMinutes() + vence.getTimezoneOffset()); }
-            else { vence.setDate(vence.getDate() + parseInt(dias)); }
+            if(esCoach) { 
+                vence.setFullYear(vence.getFullYear() + 1); // Staff tiene 1 año renovable 
+            } else if(manual) { 
+                vence = new Date(manual); vence.setMinutes(vence.getMinutes() + vence.getTimezoneOffset()); 
+            } else { 
+                vence.setDate(vence.getDate() + parseInt(dias)); 
+            }
+
+            const pago = esCoach ? 0 : precios[dias];
+
             await setDoc(doc(db, "clientes", id), { 
                 id, nombre: nom, telefono: tel, foto: document.getElementById('fotoAtleta').value,
-                cumple: document.getElementById('cumpleAtleta').value, fechaVencimiento: vence, asistencias: 0, planId: dias 
+                cumple: document.getElementById('cumpleAtleta').value, fechaVencimiento: vence, 
+                asistencias: 0, planId: esCoach ? "COACH" : dias, esCoach: esCoach 
             });
-            if(precios[dias] > 0) {
-                await addDoc(collection(db, "finanzas"), { concepto: `Inscripción: ${nom}`, monto: precios[dias], metodo: met, fecha: new Date() });
+
+            if(!esCoach && pago > 0) {
+                await addDoc(collection(db, "finanzas"), { concepto: `Inscripción: ${nom}`, monto: pago, metodo: met, fecha: new Date() });
             }
-            const ticket = `*EK' BALAM CROSS TRAINING* 🐆\n*TICKET DE INSCRIPCIÓN*\nID: ${id}\nAtleta: ${nom}\nPlan: ${getPlanTexto(dias)}\nVence: ${vence.toLocaleDateString()}\nPago: $${precios[dias]}\n¡Bienvenido!`;
+
+            const ticket = esCoach ? 
+                `*EK' BALAM CROSS TRAINING* 🐆\n*ALTA DE COACH*\nID: ${id}\nStaff: ${nom}\n¡Bienvenido al equipo!` :
+                `*EK' BALAM CROSS TRAINING* 🐆\n*TICKET DE INSCRIPCIÓN*\nID: ${id}\nAtleta: ${nom}\nPlan: ${getPlanTexto(dias)}\nVence: ${vence.toLocaleDateString()}\nPago: $${pago}\n¡Bienvenido!`;
+            
             window.enviarWS(tel, ticket);
             closeModal('modal-inscripcion');
+            document.getElementById('esCoach').checked = false; // Reset
         };
 
         // --- RENOVACIÓN ---
@@ -306,7 +342,7 @@
             const tel = document.getElementById('renovarTel').value;
             const precios = window.getPreciosConfig();
             let vence = new Date(); vence.setDate(vence.getDate() + parseInt(dias));
-            await updateDoc(doc(db, "clientes", id), { fechaVencimiento: vence, planId: dias });
+            await updateDoc(doc(db, "clientes", id), { fechaVencimiento: vence, planId: dias, esCoach: false });
             await addDoc(collection(db, "finanzas"), { concepto: `Renovación: ${nom}`, monto: precios[dias], metodo: met, fecha: new Date() });
             const ticket = `*EK' BALAM CROSS TRAINING* 🐆\n*TICKET DE RENOVACIÓN*\nID: ${id}\nAtleta: ${nom}\nPlan: ${getPlanTexto(dias)}\nVence: ${vence.toLocaleDateString()}\nPago: $${precios[dias]}`;
             window.enviarWS(tel, ticket);
@@ -319,11 +355,9 @@
             const ahora = new Date();
             const historialBody = document.getElementById('historialCajaBody');
             historialBody.innerHTML = "";
-
             snap.forEach(docSnap => {
                 const f = docSnap.data();
                 const fF = f.fecha.toDate();
-                
                 if(fF.toLocaleDateString() === ahora.toLocaleDateString()) {
                     if(f.metodo === "Efectivo") hoyE += f.monto; else hoyT += f.monto;
                 }
@@ -350,7 +384,6 @@
             const ahora = new Date();
             const datosExcel = [];
             const idsABorrar = [];
-
             snap.forEach(docSnap => {
                 const f = docSnap.data();
                 const fF = f.fecha.toDate();
@@ -365,24 +398,17 @@
                     idsABorrar.push(docSnap.id);
                 }
             });
-
             if(datosExcel.length === 0) return alert("Sin datos este mes");
-            
             const ws = XLSX.utils.json_to_sheet(datosExcel);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Finanzas");
             XLSX.writeFile(wb, `Reporte_EkBalam_${ahora.getMonth()+1}_${ahora.getFullYear()}.xlsx`);
-
             setTimeout(async () => {
                 if(confirm("📊 Reporte descargado.\n\n¿Deseas LIMPIAR los registros de este mes en la base de datos?")) {
                     try {
-                        for (const idDoc of idsABorrar) {
-                            await deleteDoc(doc(db, "finanzas", idDoc));
-                        }
+                        for (const idDoc of idsABorrar) { await deleteDoc(doc(db, "finanzas", idDoc)); }
                         alert("✅ Caja limpiada con éxito.");
-                    } catch (e) {
-                        alert("Error al limpiar registros.");
-                    }
+                    } catch (e) { alert("Error al limpiar registros."); }
                 }
             }, 1500);
         };
