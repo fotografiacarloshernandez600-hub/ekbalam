@@ -161,6 +161,23 @@
         </div>
     </div>
 
+    <div id="modal-editar-atleta" class="modal">
+        <div class="modal-content">
+            <h3>Editar Datos de Atleta</h3>
+            <input type="hidden" id="editId">
+            <label>Nombre:</label>
+            <input type="text" id="editNombre">
+            <label>WhatsApp:</label>
+            <input type="tel" id="editTel">
+            <label>Asistencias (Fuego):</label>
+            <input type="number" id="editAsistencias">
+            <label>URL Foto:</label>
+            <input type="text" id="editFoto">
+            <button class="btn-confirmar" onclick="guardarEdicionAtleta()">GUARDAR CAMBIOS</button>
+            <button class="btn-cancelar" onclick="closeModal('modal-editar-atleta')">CANCELAR</button>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, addDoc, getDocs, updateDoc, deleteDoc, increment, onSnapshot, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -222,12 +239,39 @@
                         <td>
                             <button class="btn-ws" onclick="avisarVencimiento('${d.nombre}','${d.telefono}',${diff})">AVISAR</button>
                             <button class="btn-renew" onclick="abrirRenovacion('${d.id}','${d.nombre}','${d.telefono}')">RENOVAR</button>
-                            <button class="btn-edit" onclick="abrirEditorAtleta('${d.id}','${d.nombre}','${d.telefono}',${d.asistencias},'${d.foto}')">✎</button>
+                            <button class="btn-edit" onclick="abrirEditorAtleta('${d.id}','${d.nombre}','${d.telefono}',${d.asistencias || 0},'${d.foto || ''}')">✎</button>
                             <button class="btn-delete" onclick="eliminarAtleta('${d.id}')">✖</button>
                         </td>
                     </tr>`;
             });
         });
+
+        // --- FUNCIONES DE EDICIÓN (NUEVAS) ---
+        window.abrirEditorAtleta = (id, nombre, tel, asistencias, foto) => {
+            document.getElementById('editId').value = id;
+            document.getElementById('editNombre').value = nombre;
+            document.getElementById('editTel').value = tel;
+            document.getElementById('editAsistencias').value = asistencias;
+            document.getElementById('editFoto').value = foto;
+            openModal('modal-editar-atleta');
+        };
+
+        window.guardarEdicionAtleta = async () => {
+            const id = document.getElementById('editId').value;
+            const nuevoDato = {
+                nombre: document.getElementById('editNombre').value.toUpperCase(),
+                telefono: document.getElementById('editTel').value,
+                asistencias: parseInt(document.getElementById('editAsistencias').value),
+                foto: document.getElementById('editFoto').value
+            };
+            try {
+                await updateDoc(doc(db, "clientes", id), nuevoDato);
+                alert("✅ Datos actualizados correctamente.");
+                closeModal('modal-editar-atleta');
+            } catch (e) {
+                alert("Error al actualizar.");
+            }
+        };
 
         // --- REGISTRO ---
         window.registrarAtleta = async () => {
@@ -280,14 +324,11 @@
                 const f = docSnap.data();
                 const fF = f.fecha.toDate();
                 
-                // Totales
                 if(fF.toLocaleDateString() === ahora.toLocaleDateString()) {
                     if(f.metodo === "Efectivo") hoyE += f.monto; else hoyT += f.monto;
                 }
                 if(fF.getMonth() === ahora.getMonth() && fF.getFullYear() === ahora.getFullYear()) {
                     if(f.metodo === "Efectivo") mesE += f.monto; else mesT += f.monto;
-                    
-                    // Agregar al historial visible
                     historialBody.innerHTML += `
                         <tr>
                             <td>${fF.getDate()}/${fF.getMonth()+1}</td>
