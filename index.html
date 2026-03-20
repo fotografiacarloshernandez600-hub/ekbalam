@@ -3,269 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ek' Balam Admin - Pro</title>
+    <title>Check-in Ek' Balam</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* AJUSTE 100% VISTA NAVEGADOR */
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #000; }
-        body { display: flex; width: 100vw; font-family: 'Rajdhani', sans-serif; }
-        .sidebar { height: 100vh; min-width: 250px; display: flex; flex-direction: column; }
-        .main-content { flex-grow: 1; height: 100vh; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        /* Fondo Animado Dinámico */
+        body { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            background: linear-gradient(-45deg, #0a0b10, #1a1c25, #0a0b10, #051923);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            margin: 0; 
+            font-family: 'Rajdhani', sans-serif; 
+        }
 
-        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 15px; }
-        .product-card { background: var(--card-bg); border: 1px solid var(--glass); border-radius: 15px; padding: 10px; text-align: center; }
-        #atleta-section table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
-        #atleta-section th { color: #00d4ff; text-transform: uppercase; padding: 10px; font-size: 0.8rem; }
-        .atleta-row { background: rgba(255, 255, 255, 0.05); transition: 0.3s; }
-        .atleta-row td { padding: 15px 10px; text-align: center; color: #fff; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .atleta-row td:first-child { border-left: 3px solid #00d4ff; border-radius: 10px 0 0 10px; font-weight: bold; color: #00d4ff; }
-        .col-nombre { font-weight: bold; text-align: left !important; }
-        .col-visitas { color: #ff00ff !important; font-weight: bold; }
-        .vencido-critico { background: rgba(255, 49, 49, 0.2) !important; color: #ff3131 !important; animation: danger-pulse 1s infinite; }
-        @keyframes danger-pulse { 50% { opacity: 0.8; } }
-        .img-atleta { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #00d4ff; vertical-align: middle; margin-right: 10px; }
-        .search-bar { width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 10px; border: 1px solid #00d4ff; background: rgba(0,0,0,0.5); color: white; font-family: 'Rajdhani'; }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Tarjeta Neón con Glassmorphism */
+        .checkin-card { 
+            max-width: 450px; 
+            width: 90%; 
+            text-align: center; 
+            border: 2px solid rgba(0, 242, 255, 0.5); 
+            padding: 40px; 
+            position: relative; 
+            overflow: hidden;
+            box-shadow: 0 0 25px rgba(0, 242, 255, 0.2);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+        }
         
-        .cumple-anim { font-size: 1.2rem; display: inline-block; animation: bounce 1s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+        .logo-checkin { width: 150px; margin-bottom: 10px; filter: drop-shadow(0 0 10px #00f2ff); }
+        
+        /* Input con Brillo Neón */
+        #idInput { 
+            text-align: center; 
+            font-size: 2.2rem; 
+            width: 90%; 
+            border: none; 
+            border-bottom: 3px solid rgba(0, 242, 255, 0.5); 
+            background: transparent; 
+            color: white; 
+            outline: none; 
+            margin-top: 20px; 
+            font-weight: bold; 
+            transition: all 0.3s ease;
+        }
 
-        .btn-ws { background: #25d366; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-renew { background: #f39c12; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 5px; }
-        .btn-delete { background: #ff3131; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-edit { background: #00d4ff; color: black; border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer; margin-right: 5px; }
-        .price-config-grid { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-        .price-item { display: flex; flex-direction: column; gap: 5px; font-size: 0.8rem; }
-        .price-item input { width: 70px; padding: 5px; border-radius: 5px; border: 1px solid #00d4ff; background: rgba(0,0,0,0.3); color: white; text-align: center; }
+        #idInput:focus {
+            border-bottom-color: #00f2ff;
+            text-shadow: 0 0 10px #00f2ff;
+        }
 
-        .historial-caja { margin-top: 20px; max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; }
-        .historial-caja table { width: 100%; font-size: 0.85rem; border-collapse: collapse; }
-        .historial-caja th { text-align: left; border-bottom: 1px solid var(--glass); padding: 5px; color: #00d4ff; }
-        .historial-caja td { padding: 8px 5px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        /* Botón con Pulso de Energía */
+        .btn-checkin { 
+            width: 100%; 
+            font-size: 1.5rem; 
+            padding: 15px; 
+            margin-top: 30px; 
+            background: transparent; 
+            color: #00f2ff; 
+            border: 2px solid #00f2ff; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            border-radius: 10px;
+            animation: pulseNeon 2s infinite;
+        }
 
-        .coach-check { display: flex; align-items: center; gap: 8px; margin: 10px 0; background: rgba(0, 212, 255, 0.1); padding: 8px; border-radius: 8px; border: 1px dashed #00d4ff; }
-        .coach-badge { background: #00d4ff; color: #000; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
+        @keyframes pulseNeon {
+            0% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 242, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0); }
+        }
 
-        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #00151a 0%, #000 100%); display: flex; justify-content: center; align-items: center; z-index: 99999; }
-        .login-card { background: rgba(255,255,255,0.03); padding: 40px; border-radius: 25px; border: 1px solid #00d4ff; text-align: center; width: 320px; box-shadow: 0 0 30px rgba(0, 212, 255, 0.2); }
-        .login-card input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: 1px solid #00d4ff; background: rgba(0,0,0,0.5); color: white; text-align: center; font-size: 1.2rem; font-family: 'Rajdhani'; }
-        .btn-logout { background: #ff3131 !important; margin-top: auto; margin-bottom: 20px; }
+        .btn-checkin:hover { 
+            background: #00f2ff; 
+            color: black; 
+            transform: scale(1.02);
+            box-shadow: 0 0 30px #00f2ff;
+            animation: none;
+        }
+
+        /* Efecto Glitch al aparecer info */
+        #info { 
+            display: none; 
+            margin-top: 30px; 
+            padding-top: 20px; 
+            border-top: 1px solid rgba(255,255,255,0.1); 
+        }
+
+        .glitch-in { animation: glitch 0.4s ease-out; }
+
+        @keyframes glitch {
+            0% { opacity: 0; transform: scale(0.9); }
+            20% { opacity: 1; transform: scale(1.05) skewX(10deg); }
+            40% { transform: skewX(-10deg); }
+            100% { transform: scale(1); }
+        }
+
+        /* Animaciones Especiales */
+        .cumple-rainbow { 
+            background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #00f2ff, #0000ff, #9400d3);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: rainbowLoop 3s linear infinite;
+            background-size: 200% auto;
+            font-size: 2.5rem !important; 
+        }
+
+        @keyframes rainbowLoop { to { background-position: 200% center; } }
+
+        .icon-bounce { display: inline-block; animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
     </style>
 </head>
 <body>
 
-    <div id="login-overlay">
-        <div class="login-card">
-            <img src="logo.jpg" alt="Ek Balam" style="width:100px; border-radius:50%; border: 2px solid #00d4ff; margin-bottom: 15px;">
-            <h2 style="color:#00d4ff; margin:0;">EK' BALAM</h2>
-            <p style="color:#ccc; font-size: 0.8rem; letter-spacing: 2px; margin-bottom: 20px;">ADMIN ACCESS</p>
-            <input type="password" id="passAdmin" placeholder="••••••••" onkeypress="if(event.key==='Enter') window.validarAcceso()">
-            <button class="btn-confirmar" style="width:100%" onclick="window.validarAcceso()">ENTRAR</button>
-            <p id="errorLogin" style="color:#ff3131; font-size: 0.8rem; margin-top: 10px; display:none;">Contraseña Incorrecta</p>
-        </div>
-    </div>
-
-    <nav class="sidebar">
-        <div class="logo-area">
-            <img src="logo.jpg" alt="Ek Balam" style="width:70px; border-radius:50%">
-            <h1 class="neon-text">EK'BALAM CROSS TRAINING</h1>
-            <span>Admin Panel</span>
-        </div>
-        <button class="nav-btn" onclick="showSection('atleta-section')">👥 Atletas</button>
-        <button class="nav-btn" onclick="openModal('modal-inscripcion')">➕ Inscripción</button>
-        <button class="nav-btn" onclick="showSection('ventas-section')">🛒 Tienda</button>
-        <button class="nav-btn" onclick="showSection('inventario-section')">📦 Inventario</button>
-        <button class="nav-btn" onclick="showSection('gastos-section')">💸 Gastos del Día</button> <button class="nav-btn" onclick="showSection('corte-section')">💰 Caja</button>
-        <button class="nav-btn btn-logout" onclick="window.cerrarSesion()">🔒 Cerrar Sesión</button>
-    </nav>
-
-    <main class="main-content">
-        <section id="atleta-section" class="glass-card">
-            <h3>Atletas Activos</h3>
-            <input type="text" id="inputBusqueda" class="search-bar" placeholder="🔍 Buscar por nombre o ID..." onkeyup="filtrarAtletas()">
-            <table>
-                <thead>
-                    <tr><th>Foto</th><th>ID</th><th>Nombre</th><th>Vence</th><th>Visitas</th><th>Gestión</th></tr>
-                </thead>
-                <tbody id="listaAtletasBody"></tbody>
-            </table>
-        </section>
-
-        <section id="gastos-section" class="glass-card" style="display:none;">
-            <h3>💸 Registro de Gastos Diarios</h3>
-            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid #ff3131;">
-                <label>Concepto del Gasto:</label>
-                <input type="text" id="gastoConcepto" placeholder="Ej. Pago de luz, garrafones, limpieza..." class="search-bar" style="margin-bottom:10px;">
-                <label>Cantidad ($):</label>
-                <input type="number" id="gastoMonto" placeholder="0.00" class="search-bar" style="margin-bottom:10px;">
-                <label>Método de Pago:</label>
-                <select id="gastoMetodo" class="search-bar" style="margin-bottom:20px;">
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Transferencia">Transferencia</option>
-                </select>
-                <button class="btn-confirmar" style="width:100%; background:#ff3131;" onclick="registrarGasto()">REGISTRAR GASTO</button>
-            </div>
-        </section>
-
-        <section id="corte-section" class="glass-card" style="display:none;">
-            <div style="display:flex; justify-content: space-between; align-items: center;">
-                <h3>💰 Control de Caja</h3>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn-ws" style="background:#f39c12; color:black;" onclick="openModal('modal-seguridad')">🔐 Pass Admin</button>
-                    <button class="btn-ws" style="background:#1d6f42;" onclick="descargarReporteExcel()">📊 Reporte Excel</button>
-                </div>
-            </div>
-            <div class="stats-container" style="display:flex; gap:15px;">
-                <div class="stat-card"><h4>Hoy (Neto)</h4><p id="corteDia" style="color:#39ff14; font-size:1.8rem;">$0</p><small id="detallesHoy"></small></div>
-                <div class="stat-card"><h4>Gastos Hoy</h4><p id="totalGastosHoy" style="color:#ff3131; font-size:1.8rem;">$0</p></div>
-                <div class="stat-card"><h4>Mes</h4><p id="corteMes" style="color:#00d4ff; font-size:1.8rem;">$0</p><small id="detallesMes"></small></div>
-            </div>
-
-            <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-                <h4>📜 Historial de Registros (Mes Actual)</h4>
-                <div class="historial-caja">
-                    <table>
-                        <thead>
-                            <tr><th>Fecha</th><th>Concepto</th><th>Monto</th><th>Método</th><th>Acción</th></tr>
-                        </thead>
-                        <tbody id="historialCajaBody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-                <h4>⚙️ Ajuste de Costos</h4>
-                <div class="price-config-grid">
-                    <div class="price-item"><label>Visita</label><input type="number" id="confPrecioVis" value="60"></div>
-                    <div class="price-item"><label>Semana</label><input type="number" id="confPrecioSem" value="250"></div>
-                    <div class="price-item"><label>Quincena</label><input type="number" id="confPrecioQuin" value="350"></div>
-                    <div class="price-item"><label>21 Días</label><input type="number" id="confPrecio21" value="450"></div>
-                    <div class="price-item"><label>Mes</label><input type="number" id="confPrecioMes" value="550"></div>
-                </div>
-            </div>
-        </section>
+    <div class="glass-card checkin-card">
+        <img src="logo.jpg" alt="Ek' Balam Logo" class="logo-checkin">
+        <h1 class="neon-text" style="font-size: 3.5rem; margin: 0; color: #fff; text-shadow: 0 0 10px #00f2ff;">EK' BALAM</h1>
+        <p style="color: #00f2ff; letter-spacing: 4px; font-weight: bold; margin-bottom: 30px;">ACCESO ATLETAS</p>
         
-        <section id="inventario-section" class="glass-card" style="display:none;">
-             <div style="display:flex; justify-content: space-between; align-items: center;">
-                <h3>📦 Inventario</h3>
-                <button class="btn-confirmar" onclick="openModal('modal-producto')">+ Nuevo Producto</button>
-            </div>
-            <table><tbody id="inventarioBody"></tbody></table>
-        </section>
-        <section id="ventas-section" class="glass-card" style="display:none;">
-            <h3>🛒 Tienda</h3>
-            <div class="product-grid" id="gridVentas"></div>
-        </section>
-    </main>
-
-    <div id="modal-seguridad" class="modal">
-        <div class="modal-content" style="border: 1px solid #f39c12;">
-            <h3 style="color:#f39c12;">🔐 Seguridad Admin</h3>
-            <label style="font-size:0.8rem;">Nueva Contraseña:</label>
-            <input type="text" id="nuevaPassAdmin" placeholder="Mínimo 6 caracteres" style="width:100%; background:black; color:white; border:1px solid #f39c12; padding:10px; margin: 10px 0;">
-            <button class="btn-renew" style="width:100%; margin:0;" onclick="window.cambiarPassword()">ACTUALIZAR ACCESO</button>
-            <button class="btn-cancelar" style="width:100%; margin-top:10px;" onclick="closeModal('modal-seguridad')">CERRAR</button>
-        </div>
-    </div>
-
-    <div id="modal-inscripcion" class="modal">
-        <div class="modal-content">
-            <h3>Nueva Inscripción</h3>
-            <div class="coach-check">
-                <input type="checkbox" id="esCoach" style="width:20px; height:20px; cursor:pointer;">
-                <label for="esCoach" style="color:#00d4ff; font-weight:bold; cursor:pointer;">MARCAR COMO COACH (Staff)</label>
-            </div>
-            <div class="input-group-foto" style="display:flex; flex-direction:column; gap:5px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid var(--glass);">
-                <label style="font-size: 0.75rem; color: #00d4ff; font-weight: bold;">Foto del Atleta:</label>
-                <input type="text" id="fotoAtleta" placeholder="URL de imagen">
-                <label style="text-align:center; margin:2px 0; font-size: 0.75rem; color: #ccc;">O SUBIR ARCHIVO:</label>
-                <input type="file" id="fileAtleta" accept="image/*" onchange="convertirImagen('fileAtleta', 'fotoAtleta')">
-            </div>
-            <input type="text" id="nomAtleta" placeholder="Nombre completo">
-            <input type="tel" id="telAtleta" placeholder="WhatsApp">
-            <label>Cumpleaños:</label>
-            <input type="date" id="cumpleAtleta">
-            <hr style="border:0; border-top:1px solid var(--glass); margin:10px 0; width:100%">
-            <label style="color: #f39c12; font-size: 0.8rem;">Vencimiento Manual (Migraciones):</label>
-            <input type="date" id="venceManual">
-            <select id="planMembrecia">
-                <option value="1">Visita</option>
-                <option value="7">Semanal</option>
-                <option value="15">Quincenal</option>
-                <option value="21">21 Días</option>
-                <option value="30" selected>Mensual</option>
-                <option value="0">Migración (Sin costo)</option>
-            </select>
-            <select id="metodoInscripcion">
-                <option value="Efectivo">Efectivo</option>
-                <option value="Transferencia">Transferencia</option>
-            </select>
-            <button class="btn-confirmar" onclick="registrarAtleta()">REGISTRAR Y TICKET</button>
-            <button class="btn-cancelar" onclick="closeModal('modal-inscripcion')">CERRAR</button>
-        </div>
-    </div>
-
-    <div id="modal-renovar" class="modal">
-        <div class="modal-content">
-            <h3>Renovar Membresía</h3>
-            <p id="renovarNombre" style="color:#00d4ff; font-weight:bold;"></p>
-            <input type="hidden" id="renovarId"><input type="hidden" id="renovarTel">
-            <select id="planRenovacion">
-                <option value="1">Visita</option>
-                <option value="7">Semanal</option>
-                <option value="15">Quincenal</option>
-                <option value="21">21 Días</option>
-                <option value="30">Mensual</option>
-            </select>
-            <select id="metodoRenovacion">
-                <option value="Efectivo">Efectivo</option>
-                <option value="Transferencia">Transferencia</option>
-            </select>
-            <button class="btn-confirmar" onclick="procesarRenovacion()">RENOVAR Y TICKET</button>
-            <button class="btn-cancelar" onclick="closeModal('modal-renovar')">CERRAR</button>
-        </div>
-    </div>
-
-    <div id="modal-editar-atleta" class="modal">
-        <div class="modal-content">
-            <h3>Editar Datos de Atleta</h3>
-            <input type="hidden" id="editId">
-            <div class="coach-check">
-                <input type="checkbox" id="editEsCoach" style="width:20px; height:20px; cursor:pointer;">
-                <label for="editEsCoach" style="color:#00d4ff; font-weight:bold; cursor:pointer;">PERFIL DE COACH</label>
-            </div>
-            <label>Nombre:</label>
-            <input type="text" id="editNombre">
-            <label>WhatsApp:</label>
-            <input type="tel" id="editTel">
-
-            <label style="color: #f39c12;">Corregir Membresía (Error de dedo):</label>
-            <select id="editPlanId">
-                <option value="NO_CHANGE">-- Sin cambios --</option>
-                <option value="1">Visita (1 día)</option>
-                <option value="7">Semanal (7 días)</option>
-                <option value="15">Quincenal (15 días)</option>
-                <option value="21">21 Días</option>
-                <option value="30">Mensual (30 días)</option>
-            </select>
-            
-            <label>Asistencias (Fuego):</label>
-            <input type="number" id="editAsistencias">
-            <div class="input-group-foto" style="display:flex; flex-direction:column; gap:5px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid var(--glass);">
-                <label style="font-size: 0.75rem; color: #00d4ff; font-weight: bold;">Foto del Atleta:</label>
-                <input type="text" id="editFoto" placeholder="URL de imagen">
-                <label style="text-align:center; margin:2px 0; font-size: 0.75rem; color: #ccc;">O SUBIR ARCHIVO:</label>
-                <input type="file" id="editFileAtleta" accept="image/*" onchange="convertirImagen('editFileAtleta', 'editFoto')">
-            </div>
-            <button class="btn-confirmar" onclick="guardarEdicionAtleta()">GUARDAR CAMBIOS</button>
-            <button class="btn-cancelar" onclick="closeModal('modal-editar-atleta')">CANCELAR</button>
+        <input type="text" id="idInput" placeholder="EB-000" autocomplete="off">
+        
+        <button class="btn-checkin" onclick="checkIn()">CONFIRMAR ASISTENCIA</button>
+        
+        <div id="info">
+            <h2 id="atletaNom" style="color:#fff; text-transform: uppercase; font-size: 2rem; margin: 0;"></h2>
+            <p id="diasMsg" style="font-size: 1.6rem; font-weight: bold; margin: 15px 0;"></p>
+            <p id="motivo" style="font-size: 1.3rem; font-weight: 700; font-style: italic;"></p>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, increment, onSnapshot, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs';
+        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyArDuJ0_9r1ZY3OB-CGJMZMO3aAwSkM4vU",
@@ -279,354 +163,117 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // SEGURIDAD
-        window.validarAcceso = async () => {
-            const passIngresada = document.getElementById('passAdmin').value;
-            const docRef = doc(db, "configuracion", "seguridad");
-            const docSnap = await getDoc(docRef);
-            let passCorrecta = "BALAM2026";
-            if (docSnap.exists()) passCorrecta = docSnap.data().password;
-            if (passIngresada === passCorrecta) {
-                document.getElementById('login-overlay').style.display = 'none';
-                sessionStorage.setItem('sesionActiva', 'true');
+        const frases = [
+            "¡EL LÍMITE ES TU MENTE! 🔥",
+            "¡NI UN PASO ATRÁS! 👊",
+            "¡TU ÚNICA COMPETENCIA ERES TÚ! 📈",
+            "¡SUDOR HOY, GLORIA MAÑANA! 🏆",
+            "¡PROHIBIDO RENDIRSE! ⚡",
+            "¡CONVIERTE EL DOLOR EN PODER! ✨"
+        ];
+
+        // Función para generar sonido de escaneo
+        const playScanSound = (success = true) => {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = context.createOscillator();
+            const gain = context.createGain();
+            osc.connect(gain);
+            gain.connect(context.destination);
+
+            if (success) {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, context.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1760, context.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, context.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.2);
             } else {
-                document.getElementById('errorLogin').style.display = 'block';
-                document.getElementById('passAdmin').value = "";
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(110, context.currentTime);
+                gain.gain.setValueAtTime(0.1, context.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
             }
+            osc.start();
+            osc.stop(context.currentTime + 0.5);
         };
 
-        window.cerrarSesion = () => { sessionStorage.removeItem('sesionActiva'); location.reload(); };
+        window.checkIn = async () => {
+            const idInput = document.getElementById('idInput');
+            const id = idInput.value.trim().toUpperCase();
+            if(!id) return;
 
-        window.cambiarPassword = async () => {
-            const nueva = document.getElementById('nuevaPassAdmin').value;
-            if(nueva.length < 4) return alert("Contraseña muy corta");
-            if(confirm("¿Actualizar contraseña de acceso?")){
-                await updateDoc(doc(db, "configuracion", "seguridad"), { password: nueva });
-                alert("✅ Contraseña actualizada. Sesión cerrada.");
-                window.cerrarSesion();
-            }
-        };
+            try {
+                const ref = doc(db, "clientes", id);
+                const snap = await getDoc(ref);
 
-        if(sessionStorage.getItem('sesionActiva') === 'true') document.getElementById('login-overlay').style.display = 'none';
+                if (snap.exists()) {
+                    const data = snap.data();
+                    const hoy = new Date();
+                    const v = data.fechaVencimiento.toDate();
+                    const diff = Math.ceil((v - hoy) / (1000*60*60*24));
 
-        // FUNCIONES CORE
-        window.convertirImagen = (inputId, targetId) => {
-            const archivo = document.getElementById(inputId).files[0];
-            if (!archivo) return;
-            const lector = new FileReader();
-            lector.onloadend = () => { document.getElementById(targetId).value = lector.result; };
-            lector.readAsDataURL(archivo);
-        };
-
-        window.enviarWS = (tel, msg) => {
-            const url = `https://api.whatsapp.com/send?phone=52${tel}&text=${encodeURIComponent(msg)}`;
-            window.open(url, '_blank');
-        };
-
-        window.avisarVencimiento = (nom, tel, d) => {
-            const msg = `Hola ${nom}, te quedan ${d} días de membresía. ¡Te esperamos! 🐆`;
-            window.enviarWS(tel, msg);
-        };
-
-        window.getPreciosConfig = () => ({
-            "0": 0, "1": parseFloat(document.getElementById('confPrecioVis').value),
-            "7": parseFloat(document.getElementById('confPrecioSem').value),
-            "15": parseFloat(document.getElementById('confPrecioQuin').value),
-            "21": parseFloat(document.getElementById('confPrecio21').value),
-            "30": parseFloat(document.getElementById('confPrecioMes').value)
-        });
-
-        const getPlanTexto = (d) => ({ "1":"Visita", "7":"Semanal", "15":"Quincenal", "21":"21 Días", "30":"Mensual", "0":"Migración", "COACH":"Staff Coach" }[d]);
-
-        // RENDER ATLETAS
-        onSnapshot(collection(db, "clientes"), (snap) => {
-            const tbody = document.getElementById('listaAtletasBody');
-            tbody.innerHTML = ""; const hoy = new Date();
-            snap.forEach(ds => {
-                const d = ds.data(); const v = d.fechaVencimiento.toDate();
-                const diff = Math.ceil((v - hoy) / (1000*60*60*24));
-                const foto = d.foto || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
-                const esCoach = d.esCoach || false;
-                let cumpleIco = "";
-                if(d.cumple) {
-                    const p = d.cumple.split('-');
-                    if(parseInt(p[2]) === hoy.getDate() && (parseInt(p[1])-1) === hoy.getMonth()) cumpleIco = "<span class='cumple-anim'>🎂</span> ";
-                }
-                const badgeCoach = esCoach ? `<span class="coach-badge">COACH</span>` : '';
-                const btnRenovar = esCoach ? '' : `<button class="btn-renew" onclick="abrirRenovacion('${d.id}','${d.nombre}','${d.telefono}')">RENOVAR</button>`;
-                const venceTxt = esCoach ? '∞ STAFF' : (diff > 0 ? diff + "d" : "VENCIDO");
-
-                tbody.innerHTML += `
-                    <tr class="atleta-row" data-id="${d.id}">
-                        <td><img src="${foto}" class="img-atleta"></td>
-                        <td>${d.id}</td>
-                        <td class="col-nombre">${cumpleIco}${d.nombre}${badgeCoach}</td>
-                        <td class="${!esCoach && diff <= 0 ? 'vencido-critico' : ''}">${venceTxt}</td>
-                        <td class="col-visitas">${d.asistencias || 0} 🔥</td>
-                        <td>
-                            <button class="btn-ws" onclick="avisarVencimiento('${d.nombre}','${d.telefono}',${diff})">AVISAR</button>
-                            ${btnRenovar}
-                            <button class="btn-edit" onclick="abrirEditorAtleta('${d.id}','${d.nombre}','${d.telefono}',${d.asistencias || 0},'${d.foto || ''}', ${esCoach})">✎</button>
-                            <button class="btn-delete" onclick="eliminarAtleta('${d.id}')">✖</button>
-                        </td>
-                    </tr>`;
-            });
-        });
-
-        // EDICIÓN
-        window.abrirEditorAtleta = (id, nombre, tel, asistencias, foto, esCoach) => {
-            document.getElementById('editId').value = id;
-            document.getElementById('editNombre').value = nombre;
-            document.getElementById('editTel').value = tel;
-            document.getElementById('editAsistencias').value = asistencias;
-            document.getElementById('editFoto').value = foto;
-            document.getElementById('editEsCoach').checked = esCoach;
-            document.getElementById('editPlanId').value = "NO_CHANGE"; // Reset select
-            openModal('modal-editar-atleta');
-        };
-
-        window.guardarEdicionAtleta = async () => {
-            const id = document.getElementById('editId').value;
-            const nuevoPlan = document.getElementById('editPlanId').value;
-            
-            const nuevoDato = {
-                nombre: document.getElementById('editNombre').value.toUpperCase(),
-                telefono: document.getElementById('editTel').value,
-                asistencias: parseInt(document.getElementById('editAsistencias').value),
-                foto: document.getElementById('editFoto').value,
-                esCoach: document.getElementById('editEsCoach').checked
-            };
-
-            // SI SE CAMBIÓ EL TIPO DE MEMBRESÍA POR ERROR
-            if(nuevoPlan !== "NO_CHANGE") {
-                let nuevaF = new Date();
-                nuevaF.setDate(nuevaF.getDate() + parseInt(nuevoPlan));
-                nuevoDato.fechaVencimiento = nuevaF;
-                nuevoDato.planId = nuevoPlan;
-            }
-
-            await updateDoc(doc(db, "clientes", id), nuevoDato);
-            closeModal('modal-editar-atleta');
-        };
-
-        // GASTOS
-        window.registrarGasto = async () => {
-            const concepto = document.getElementById('gastoConcepto').value;
-            const monto = parseFloat(document.getElementById('gastoMonto').value);
-            const metodo = document.getElementById('gastoMetodo').value;
-
-            if(!concepto || !monto) return alert("Ingresa concepto y cantidad");
-
-            await addDoc(collection(db, "finanzas"), {
-                concepto: `GASTO: ${concepto.toUpperCase()}`,
-                monto: -monto, // Se guarda negativo para restar en caja automáticamente
-                metodo: metodo,
-                tipo: "gasto",
-                fecha: new Date()
-            });
-
-            alert("Gasto registrado");
-            document.getElementById('gastoConcepto').value = "";
-            document.getElementById('gastoMonto').value = "";
-            showSection('corte-section');
-        };
-
-        // ELIMINAR REGISTRO DE CAJA (INDIVIDUAL)
-        window.eliminarRegistroCaja = async (id) => {
-            if(confirm("¿Eliminar este registro de la caja definitivamente?")) {
-                await deleteDoc(doc(db, "finanzas", id));
-            }
-        };
-
-        // REGISTRO E INSCRIPCIÓN
-        window.registrarAtleta = async () => {
-            const nom = document.getElementById('nomAtleta').value.toUpperCase();
-            const tel = document.getElementById('telAtleta').value;
-            const dias = document.getElementById('planMembrecia').value;
-            const met = document.getElementById('metodoInscripcion').value;
-            const manual = document.getElementById('venceManual').value;
-            const esCoach = document.getElementById('esCoach').checked;
-            const fotoFinal = document.getElementById('fotoAtleta').value;
-            const precios = window.getPreciosConfig();
-            const id = "EB-" + Math.floor(1000 + Math.random() * 9000);
-            
-            let vence = new Date();
-            if(esCoach) { vence.setFullYear(vence.getFullYear() + 1); } 
-            else if(manual) { vence = new Date(manual); vence.setMinutes(vence.getMinutes() + vence.getTimezoneOffset()); } 
-            else { vence.setDate(vence.getDate() + parseInt(dias)); }
-
-            const pago = esCoach ? 0 : precios[dias];
-            await setDoc(doc(db, "clientes", id), { 
-                id, nombre: nom, telefono: tel, foto: fotoFinal,
-                cumple: document.getElementById('cumpleAtleta').value, fechaVencimiento: vence, 
-                asistencias: 0, planId: esCoach ? "COACH" : dias, esCoach: esCoach 
-            });
-
-            if(!esCoach && pago > 0) {
-                await addDoc(collection(db, "finanzas"), { concepto: `Inscripción: ${nom}`, monto: pago, metodo: met, fecha: new Date() });
-            }
-
-            const ticket = esCoach ? `*EK' BALAM* 🐆\n*ALTA COACH*\nID: ${id}\nStaff: ${nom}` : `*EK' BALAM* 🐆\n*TICKET*\nID: ${id}\nAtleta: ${nom}\nPlan: ${getPlanTexto(dias)}\nVence: ${vence.toLocaleDateString()}\nPago: $${pago}`;
-            window.enviarWS(tel, ticket);
-            closeModal('modal-inscripcion');
-        };
-
-        window.procesarRenovacion = async () => {
-            const id = document.getElementById('renovarId').value;
-            const dias = document.getElementById('planRenovacion').value;
-            const met = document.getElementById('metodoRenovacion').value;
-            const nom = document.getElementById('renovarNombre').innerText;
-            const tel = document.getElementById('renovarTel').value;
-            const precios = window.getPreciosConfig();
-            let vence = new Date(); vence.setDate(vence.getDate() + parseInt(dias));
-            await updateDoc(doc(db, "clientes", id), { fechaVencimiento: vence, planId: dias, esCoach: false });
-            await addDoc(collection(db, "finanzas"), { concepto: `Renovación: ${nom}`, monto: precios[dias], metodo: met, fecha: new Date() });
-            const ticket = `*EK' BALAM* 🐆\n*RENOVACIÓN*\nID: ${id}\nAtleta: ${nom}\nVence: ${vence.toLocaleDateString()}\nPago: $${precios[dias]}`;
-            window.enviarWS(tel, ticket);
-            closeModal('modal-renovar');
-        };
-
-       // CONTINUACIÓN DE FINANZAS (Sustituye desde el onSnapshot de finanzas)
-        onSnapshot(query(collection(db, "finanzas"), orderBy("fecha", "desc")), (snap) => {
-            let hoyE = 0, hoyT = 0, mesE = 0, mesT = 0, gastosHoy = 0;
-            const ahora = new Date();
-            const historialBody = document.getElementById('historialCajaBody');
-            historialBody.innerHTML = "";
-            
-            snap.forEach(docSnap => {
-                const f = docSnap.data(); 
-                const fF = f.fecha.toDate();
-                const esGasto = f.monto < 0;
-
-                // Solo mostrar historial del mes actual
-                if(fF.getMonth() === ahora.getMonth() && fF.getFullYear() === ahora.getFullYear()) {
-                    historialBody.innerHTML += `
-                        <tr>
-                            <td>${fF.toLocaleDateString()}</td>
-                            <td>${f.concepto}</td>
-                            <td style="color: ${esGasto ? '#ff3131' : '#39ff14'}">$${f.monto}</td>
-                            <td>${f.metodo}</td>
-                            <td><button class="btn-delete" style="padding:2px 5px; font-size:0.7rem;" onclick="eliminarRegistroCaja('${docSnap.id}')">✖</button></td>
-                        </tr>`;
-
-                    if(f.metodo === "Efectivo") mesE += f.monto; else mesT += f.monto;
-
-                    if(fF.toLocaleDateString() === ahora.toLocaleDateString()) {
-                        if(f.metodo === "Efectivo") hoyE += f.monto; else hoyT += f.monto;
-                        if(esGasto) gastosHoy += Math.abs(f.monto);
-                    }
-                }
-            });
-
-            document.getElementById('corteDia').innerText = `$${hoyE + hoyT}`;
-            document.getElementById('detallesHoy').innerText = `Efec: $${hoyE} | Trans: $${hoyT}`;
-            document.getElementById('totalGastosHoy').innerText = `$${gastosHoy}`;
-            document.getElementById('corteMes').innerText = `$${mesE + mesT}`;
-            document.getElementById('detallesMes').innerText = `Efec: $${mesE} | Trans: $${mesT}`;
-        });
-
-        // NAVEGACIÓN Y MODALES
-        window.showSection = (id) => {
-            document.querySelectorAll('section').forEach(s => s.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
-        };
-
-        window.openModal = (id) => document.getElementById(id).style.display = 'flex';
-        window.closeModal = (id) => document.getElementById(id).style.display = 'none';
-
-        window.abrirRenovacion = (id, nombre, tel) => {
-            document.getElementById('renovarId').value = id;
-            document.getElementById('renovarNombre').innerText = nombre;
-            document.getElementById('renovarTel').value = tel;
-            openModal('modal-renovar');
-        };
-
-        window.filtrarAtletas = () => {
-            const busqueda = document.getElementById('inputBusqueda').value.toLowerCase();
-            const filas = document.querySelectorAll('.atleta-row');
-            filas.forEach(f => {
-                const texto = f.innerText.toLowerCase();
-                f.style.display = texto.includes(busqueda) ? "" : "none";
-            });
-        };
-
-        // EXPORTAR EXCEL
-        window.descargarReporteExcel = async () => {
-            const q = query(collection(db, "finanzas"), orderBy("fecha", "desc"));
-            const snap = await getDocs(q);
-            const data = snap.docs.map(d => ({
-                Fecha: d.data().fecha.toDate().toLocaleString(),
-                Concepto: d.data().concepto,
-                Monto: d.data().monto,
-                Metodo: d.data().metodo
-            }));
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Corte");
-            XLSX.writeFile(wb, "Reporte_EkBalam.xlsx");
-        };
-
-    
-
-        // NAVEGACIÓN Y FILTROS
-        window.showSection = (id) => { document.querySelectorAll('section').forEach(s => s.style.display = 'none'); document.getElementById(id).style.display = 'block'; };
-        window.openModal = (id) => document.getElementById(id).style.display = 'flex';
-        window.closeModal = (id) => document.getElementById(id).style.display = 'none';
-        window.abrirRenovacion = (id, nom, tel) => { document.getElementById('renovarId').value = id; document.getElementById('renovarNombre').innerText = nom; document.getElementById('renovarTel').value = tel; openModal('modal-renovar'); };
-        window.eliminarAtleta = async (id) => { if(confirm("¿Borrar atleta?")) await deleteDoc(doc(db, "clientes", id)); };
-        window.filtrarAtletas = () => {
-            const queryBusq = document.getElementById('inputBusqueda').value.toLowerCase();
-            document.querySelectorAll('.atleta-row').forEach(f => {
-                const n = f.querySelector('.col-nombre').innerText.toLowerCase();
-                const id = f.dataset.id ? f.dataset.id.toLowerCase() : "";
-                f.style.display = (n.includes(queryBusq) || id.includes(queryBusq)) ? "" : "none";
-            });
-        };
-       // ELIMINAR ATLETA Y LIMPIAR CAJA AUTOMÁTICAMENTE
-        window.eliminarAtleta = async (id) => {
-            // 1. Obtenemos el nombre exacto que está en la tabla para no fallar en la búsqueda
-            const fila = document.querySelector(`tr[data-id="${id}"]`);
-            const nombreEnTabla = fila ? fila.querySelector('.col-nombre').innerText.replace('🎂', '').trim() : "";
-
-            if (confirm(`¿Estás seguro de eliminar a ${nombreEnTabla}? \n\n⚠️ Esto borrará también sus pagos de la caja.`)) {
-                try {
-                    // 2. Buscar registros en 'finanzas' con el nombre exacto
-                    // Buscamos tanto en mayúsculas como en el formato que tenga en la tabla
-                    const nombresABuscar = [
-                        `Inscripción: ${nombreEnTabla}`,
-                        `Renovación: ${nombreEnTabla}`,
-                        `INSCRIPCIÓN: ${nombreEnTabla}`,
-                        `RENOVACIÓN: ${nombreEnTabla}`
-                    ];
-
-                    const q = query(
-                        collection(db, "finanzas"), 
-                        where("concepto", "in", nombresABuscar)
-                    );
+                    const nomElement = document.getElementById('atletaNom');
+                    const msgElement = document.getElementById('diasMsg');
+                    const motivo = document.getElementById('motivo');
+                    const infoDiv = document.getElementById('info');
                     
-                    const querySnapshot = await getDocs(q);
-                    const registrosPagos = [];
-                    
-                    querySnapshot.forEach((docSnap) => {
-                        registrosPagos.push(deleteDoc(doc(db, "finanzas", docSnap.id)));
-                    });
-                    
-                    // 3. Borrar los pagos encontrados
-                    if (registrosPagos.length > 0) {
-                        await Promise.all(registrosPagos);
+                    nomElement.innerText = `HOLA, ${data.nombre}`;
+                    infoDiv.style.display = 'block';
+                    infoDiv.classList.add('glitch-in');
+
+                    let esCumple = false;
+                    if (data.cumple) {
+                        const [year, month, day] = data.cumple.split('-');
+                        if (parseInt(day) === hoy.getDate() && (parseInt(month)-1) === hoy.getMonth()) {
+                            esCumple = true;
+                        }
                     }
 
-                    // 4. Borrar al atleta de la colección 'clientes'
-                    await deleteDoc(doc(db, "clientes", id));
-                    
-                    alert("✅ Eliminado correctamente de Atletas y de la Caja.");
-                } catch (error) {
-                    console.error("Error al eliminar:", error);
-                    alert("❌ Error al eliminar. Revisa la consola.");
+                    if(diff > 0) {
+                        playScanSound(true); // SONIDO ÉXITO
+                        msgElement.innerText = `Membresía: ${diff} días restantes`;
+                        msgElement.style.color = "#00f2ff";
+                        
+                        if (esCumple) {
+                            motivo.innerText = "¡FELIZ CUMPLEAÑOS! 🎂🎁🔥";
+                            motivo.className = "cumple-rainbow";
+                            confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
+                        } else {
+                            const fraseRandom = frases[Math.floor(Math.random() * frases.length)];
+                            motivo.innerHTML = fraseRandom.replace("🔥", "<span class='icon-bounce'>🔥</span>");
+                            motivo.style.color = "#00ff26";
+                            motivo.className = ""; 
+                        }
+                        
+                        await updateDoc(ref, { asistencias: increment(1) });
+
+                    } else {
+                        playScanSound(false); // SONIDO ERROR
+                        msgElement.innerText = "MEMBRESÍA VENCIDA ❌";
+                        msgElement.style.color = "#ff3131";
+                        motivo.innerText = "POR FAVOR, PASA A PAGAR CON EL COACH";
+                        motivo.style.color = "white";
+                        motivo.className = "";
+                    }
+
+                    setTimeout(() => { 
+                        infoDiv.style.display = 'none'; 
+                        infoDiv.classList.remove('glitch-in');
+                        idInput.value = ""; 
+                    }, 5000);
+
+                } else {
+                    playScanSound(false);
+                    alert("ID no encontrado. Verifica con tu Coach.");
                 }
+            } catch (error) { 
+                console.error(error);
+                alert("Error de conexión");
             }
         };
-    
+
+        idInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") checkIn();
+        });
     </script>
 </body>
 </html>
