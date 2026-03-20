@@ -75,7 +75,7 @@
         <button class="nav-btn" onclick="openModal('modal-inscripcion')">➕ Inscripción</button>
         <button class="nav-btn" onclick="showSection('ventas-section')">🛒 Tienda</button>
         <button class="nav-btn" onclick="showSection('inventario-section')">📦 Inventario</button>
-        <button class="nav-btn" onclick="showSection('corte-section')">💰 Caja</button>
+        <button class="nav-btn" onclick="showSection('gastos-section')">💸 Gastos del Día</button> <button class="nav-btn" onclick="showSection('corte-section')">💰 Caja</button>
         <button class="nav-btn btn-logout" onclick="window.cerrarSesion()">🔒 Cerrar Sesión</button>
     </nav>
 
@@ -91,6 +91,22 @@
             </table>
         </section>
 
+        <section id="gastos-section" class="glass-card" style="display:none;">
+            <h3>💸 Registro de Gastos Diarios</h3>
+            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid #ff3131;">
+                <label>Concepto del Gasto:</label>
+                <input type="text" id="gastoConcepto" placeholder="Ej. Pago de luz, garrafones, limpieza..." class="search-bar" style="margin-bottom:10px;">
+                <label>Cantidad ($):</label>
+                <input type="number" id="gastoMonto" placeholder="0.00" class="search-bar" style="margin-bottom:10px;">
+                <label>Método de Pago:</label>
+                <select id="gastoMetodo" class="search-bar" style="margin-bottom:20px;">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
+                </select>
+                <button class="btn-confirmar" style="width:100%; background:#ff3131;" onclick="registrarGasto()">REGISTRAR GASTO</button>
+            </div>
+        </section>
+
         <section id="corte-section" class="glass-card" style="display:none;">
             <div style="display:flex; justify-content: space-between; align-items: center;">
                 <h3>💰 Control de Caja</h3>
@@ -100,7 +116,8 @@
                 </div>
             </div>
             <div class="stats-container" style="display:flex; gap:15px;">
-                <div class="stat-card"><h4>Hoy</h4><p id="corteDia" style="color:#39ff14; font-size:1.8rem;">$0</p><small id="detallesHoy"></small></div>
+                <div class="stat-card"><h4>Hoy (Neto)</h4><p id="corteDia" style="color:#39ff14; font-size:1.8rem;">$0</p><small id="detallesHoy"></small></div>
+                <div class="stat-card"><h4>Gastos Hoy</h4><p id="totalGastosHoy" style="color:#ff3131; font-size:1.8rem;">$0</p></div>
                 <div class="stat-card"><h4>Mes</h4><p id="corteMes" style="color:#00d4ff; font-size:1.8rem;">$0</p><small id="detallesMes"></small></div>
             </div>
 
@@ -109,7 +126,7 @@
                 <div class="historial-caja">
                     <table>
                         <thead>
-                            <tr><th>Fecha</th><th>Concepto</th><th>Monto</th><th>Método</th></tr>
+                            <tr><th>Fecha</th><th>Concepto</th><th>Monto</th><th>Método</th><th>Acción</th></tr>
                         </thead>
                         <tbody id="historialCajaBody"></tbody>
                     </table>
@@ -221,6 +238,17 @@
             <input type="text" id="editNombre">
             <label>WhatsApp:</label>
             <input type="tel" id="editTel">
+
+            <label style="color: #f39c12;">Corregir Membresía (Error de dedo):</label>
+            <select id="editPlanId">
+                <option value="NO_CHANGE">-- Sin cambios --</option>
+                <option value="1">Visita (1 día)</option>
+                <option value="7">Semanal (7 días)</option>
+                <option value="15">Quincenal (15 días)</option>
+                <option value="21">21 Días</option>
+                <option value="30">Mensual (30 días)</option>
+            </select>
+            
             <label>Asistencias (Fuego):</label>
             <input type="number" id="editAsistencias">
             <div class="input-group-foto" style="display:flex; flex-direction:column; gap:5px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid var(--glass);">
@@ -353,11 +381,14 @@
             document.getElementById('editAsistencias').value = asistencias;
             document.getElementById('editFoto').value = foto;
             document.getElementById('editEsCoach').checked = esCoach;
+            document.getElementById('editPlanId').value = "NO_CHANGE"; // Reset select
             openModal('modal-editar-atleta');
         };
 
         window.guardarEdicionAtleta = async () => {
             const id = document.getElementById('editId').value;
+            const nuevoPlan = document.getElementById('editPlanId').value;
+            
             const nuevoDato = {
                 nombre: document.getElementById('editNombre').value.toUpperCase(),
                 telefono: document.getElementById('editTel').value,
@@ -365,8 +396,46 @@
                 foto: document.getElementById('editFoto').value,
                 esCoach: document.getElementById('editEsCoach').checked
             };
+
+            // SI SE CAMBIÓ EL TIPO DE MEMBRESÍA POR ERROR
+            if(nuevoPlan !== "NO_CHANGE") {
+                let nuevaF = new Date();
+                nuevaF.setDate(nuevaF.getDate() + parseInt(nuevoPlan));
+                nuevoDato.fechaVencimiento = nuevaF;
+                nuevoDato.planId = nuevoPlan;
+            }
+
             await updateDoc(doc(db, "clientes", id), nuevoDato);
             closeModal('modal-editar-atleta');
+        };
+
+        // GASTOS
+        window.registrarGasto = async () => {
+            const concepto = document.getElementById('gastoConcepto').value;
+            const monto = parseFloat(document.getElementById('gastoMonto').value);
+            const metodo = document.getElementById('gastoMetodo').value;
+
+            if(!concepto || !monto) return alert("Ingresa concepto y cantidad");
+
+            await addDoc(collection(db, "finanzas"), {
+                concepto: `GASTO: ${concepto.toUpperCase()}`,
+                monto: -monto, // Se guarda negativo para restar en caja automáticamente
+                metodo: metodo,
+                tipo: "gasto",
+                fecha: new Date()
+            });
+
+            alert("Gasto registrado");
+            document.getElementById('gastoConcepto').value = "";
+            document.getElementById('gastoMonto').value = "";
+            showSection('corte-section');
+        };
+
+        // ELIMINAR REGISTRO DE CAJA (INDIVIDUAL)
+        window.eliminarRegistroCaja = async (id) => {
+            if(confirm("¿Eliminar este registro de la caja definitivamente?")) {
+                await deleteDoc(doc(db, "finanzas", id));
+            }
         };
 
         // REGISTRO E INSCRIPCIÓN
@@ -417,50 +486,94 @@
             closeModal('modal-renovar');
         };
 
-        // FINANZAS
+       // CONTINUACIÓN DE FINANZAS (Sustituye desde el onSnapshot de finanzas)
         onSnapshot(query(collection(db, "finanzas"), orderBy("fecha", "desc")), (snap) => {
-            let hoyE = 0, hoyT = 0, mesE = 0, mesT = 0;
+            let hoyE = 0, hoyT = 0, mesE = 0, mesT = 0, gastosHoy = 0;
             const ahora = new Date();
             const historialBody = document.getElementById('historialCajaBody');
             historialBody.innerHTML = "";
+            
             snap.forEach(docSnap => {
-                const f = docSnap.data(); const fF = f.fecha.toDate();
-                if(fF.toLocaleDateString() === ahora.toLocaleDateString()) {
-                    if(f.metodo === "Efectivo") hoyE += f.monto; else hoyT += f.monto;
-                }
+                const f = docSnap.data(); 
+                const fF = f.fecha.toDate();
+                const esGasto = f.monto < 0;
+
+                // Solo mostrar historial del mes actual
                 if(fF.getMonth() === ahora.getMonth() && fF.getFullYear() === ahora.getFullYear()) {
+                    historialBody.innerHTML += `
+                        <tr>
+                            <td>${fF.toLocaleDateString()}</td>
+                            <td>${f.concepto}</td>
+                            <td style="color: ${esGasto ? '#ff3131' : '#39ff14'}">$${f.monto}</td>
+                            <td>${f.metodo}</td>
+                            <td><button class="btn-delete" style="padding:2px 5px; font-size:0.7rem;" onclick="eliminarRegistroCaja('${docSnap.id}')">✖</button></td>
+                        </tr>`;
+
                     if(f.metodo === "Efectivo") mesE += f.monto; else mesT += f.monto;
-                    historialBody.innerHTML += `<tr><td>${fF.getDate()}/${fF.getMonth()+1}</td><td>${f.concepto}</td><td style="color:#39ff14">$${f.monto}</td><td>${f.metodo}</td></tr>`;
+
+                    if(fF.toLocaleDateString() === ahora.toLocaleDateString()) {
+                        if(f.metodo === "Efectivo") hoyE += f.monto; else hoyT += f.monto;
+                        if(esGasto) gastosHoy += Math.abs(f.monto);
+                    }
                 }
             });
+
             document.getElementById('corteDia').innerText = `$${hoyE + hoyT}`;
-            document.getElementById('detallesHoy').innerText = `Ef: $${hoyE} | Tr: $${hoyT}`;
+            document.getElementById('detallesHoy').innerText = `Efec: $${hoyE} | Trans: $${hoyT}`;
+            document.getElementById('totalGastosHoy').innerText = `$${gastosHoy}`;
             document.getElementById('corteMes').innerText = `$${mesE + mesT}`;
-            document.getElementById('detallesMes').innerText = `Ef: $${mesE} | Tr: $${mesT}`;
+            document.getElementById('detallesMes').innerText = `Efec: $${mesE} | Trans: $${mesT}`;
         });
 
-        window.descargarReporteExcel = async () => {
-            const snap = await getDocs(collection(db, "finanzas"));
-            const ahora = new Date(); const datosExcel = [];
-            snap.forEach(docSnap => {
-                const f = docSnap.data(); const fF = f.fecha.toDate();
-                if(fF.getMonth() === ahora.getMonth() && fF.getFullYear() === ahora.getFullYear()) {
-                    datosExcel.push({ Fecha: fF.toLocaleDateString(), Concepto: f.concepto, Monto: f.monto, Metodo: f.metodo });
-                }
-            });
-            if(datosExcel.length === 0) return alert("Sin datos");
-            const ws = XLSX.utils.json_to_sheet(datosExcel);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Finanzas");
-            XLSX.writeFile(wb, `Reporte_EkBalam.xlsx`);
+        // NAVEGACIÓN Y MODALES
+        window.showSection = (id) => {
+            document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
         };
+
+        window.openModal = (id) => document.getElementById(id).style.display = 'flex';
+        window.closeModal = (id) => document.getElementById(id).style.display = 'none';
+
+        window.abrirRenovacion = (id, nombre, tel) => {
+            document.getElementById('renovarId').value = id;
+            document.getElementById('renovarNombre').innerText = nombre;
+            document.getElementById('renovarTel').value = tel;
+            openModal('modal-renovar');
+        };
+
+        window.filtrarAtletas = () => {
+            const busqueda = document.getElementById('inputBusqueda').value.toLowerCase();
+            const filas = document.querySelectorAll('.atleta-row');
+            filas.forEach(f => {
+                const texto = f.innerText.toLowerCase();
+                f.style.display = texto.includes(busqueda) ? "" : "none";
+            });
+        };
+
+        // EXPORTAR EXCEL
+        window.descargarReporteExcel = async () => {
+            const q = query(collection(db, "finanzas"), orderBy("fecha", "desc"));
+            const snap = await getDocs(q);
+            const data = snap.docs.map(d => ({
+                Fecha: d.data().fecha.toDate().toLocaleString(),
+                Concepto: d.data().concepto,
+                Monto: d.data().monto,
+                Metodo: d.data().metodo
+            }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Corte");
+            XLSX.writeFile(wb, "Reporte_EkBalam.xlsx");
+        };
+
+    
 
         // NAVEGACIÓN Y FILTROS
         window.showSection = (id) => { document.querySelectorAll('section').forEach(s => s.style.display = 'none'); document.getElementById(id).style.display = 'block'; };
         window.openModal = (id) => document.getElementById(id).style.display = 'flex';
         window.closeModal = (id) => document.getElementById(id).style.display = 'none';
         window.abrirRenovacion = (id, nom, tel) => { document.getElementById('renovarId').value = id; document.getElementById('renovarNombre').innerText = nom; document.getElementById('renovarTel').value = tel; openModal('modal-renovar'); };
-        window.eliminarAtleta = async (id) => { if(confirm("¿Borrar?")) await deleteDoc(doc(db, "clientes", id)); };
+        window.eliminarAtleta = async (id) => { if(confirm("¿Borrar atleta?")) await deleteDoc(doc(db, "clientes", id)); };
         window.filtrarAtletas = () => {
             const queryBusq = document.getElementById('inputBusqueda').value.toLowerCase();
             document.querySelectorAll('.atleta-row').forEach(f => {
@@ -469,6 +582,51 @@
                 f.style.display = (n.includes(queryBusq) || id.includes(queryBusq)) ? "" : "none";
             });
         };
+       // ELIMINAR ATLETA Y LIMPIAR CAJA AUTOMÁTICAMENTE
+        window.eliminarAtleta = async (id) => {
+            // 1. Obtenemos el nombre exacto que está en la tabla para no fallar en la búsqueda
+            const fila = document.querySelector(`tr[data-id="${id}"]`);
+            const nombreEnTabla = fila ? fila.querySelector('.col-nombre').innerText.replace('🎂', '').trim() : "";
+
+            if (confirm(`¿Estás seguro de eliminar a ${nombreEnTabla}? \n\n⚠️ Esto borrará también sus pagos de la caja.`)) {
+                try {
+                    // 2. Buscar registros en 'finanzas' con el nombre exacto
+                    // Buscamos tanto en mayúsculas como en el formato que tenga en la tabla
+                    const nombresABuscar = [
+                        `Inscripción: ${nombreEnTabla}`,
+                        `Renovación: ${nombreEnTabla}`,
+                        `INSCRIPCIÓN: ${nombreEnTabla}`,
+                        `RENOVACIÓN: ${nombreEnTabla}`
+                    ];
+
+                    const q = query(
+                        collection(db, "finanzas"), 
+                        where("concepto", "in", nombresABuscar)
+                    );
+                    
+                    const querySnapshot = await getDocs(q);
+                    const registrosPagos = [];
+                    
+                    querySnapshot.forEach((docSnap) => {
+                        registrosPagos.push(deleteDoc(doc(db, "finanzas", docSnap.id)));
+                    });
+                    
+                    // 3. Borrar los pagos encontrados
+                    if (registrosPagos.length > 0) {
+                        await Promise.all(registrosPagos);
+                    }
+
+                    // 4. Borrar al atleta de la colección 'clientes'
+                    await deleteDoc(doc(db, "clientes", id));
+                    
+                    alert("✅ Eliminado correctamente de Atletas y de la Caja.");
+                } catch (error) {
+                    console.error("Error al eliminar:", error);
+                    alert("❌ Error al eliminar. Revisa la consola.");
+                }
+            }
+        };
+    
     </script>
 </body>
 </html>
